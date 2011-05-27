@@ -30,6 +30,8 @@ libOgreManager.o: libOgreManager.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
 libOgreManager.so: CFLAGS += -fPIC $(shell pkg-config --cflags OGRE)
+libOgreManager.so: CFLAGS += $(shell pkg-config --cflags OIS)
 libOgreManager.so: LFLAGS += $(shell pkg-config --libs OGRE)
+libOgreManager.so: LFLAGS += $(shell pkg-config --libs OIS)
 libOgreManager.so: libOgreManager.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -o $@
