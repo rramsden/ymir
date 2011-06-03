@@ -1,273 +1,114 @@
 #include <stdio.h>
 
-#include <OGRE/Ogre.h>
-#include <OIS/OIS.h>
-
 #include "gen_cnode.h"
+#include "OgreManager.h"
 
 using namespace std;
 using namespace Ogre;
 
-class OgreManager : public WindowEventListener, 
-                    public FrameListener 
-{
+//References to singleton OM..used by gen_cnode and lua interaces
+static OgreManager* om = NULL;
 
-    public:
-        OgreManager();
-        ~OgreManager();
+extern "C" {
 
-        int start(ei_x_buff* resp);
-        void stop();
+/* -------------- LUA Exports ---------------------*/
 
-        int renderStart();
-        void renderStop();
-   
-        bool frameStarted(const FrameEvent &event);
-        void windowClosed(RenderWindow* rw);
 
-    protected:
-        void setupInputDevices();
-        void setupResources();
 
-        Root* root;
-        RenderWindow* window;
-        bool running;
 
-        OIS::InputManager* input;
-        OIS::Mouse*        mouse;
-        OIS::Keyboard*     keyboard;
-};
 
-OgreManager::OgreManager(){
-    root = NULL;
-    window = NULL;
-    input = NULL;
-    mouse = NULL;
-    keyboard = NULL;
-
-    running = false;
+/* --------------  GEN_CNODE Exports ------------------- */
+GEN_CNODE_STATE_NEW() {
+    return (struct gen_cnode_lib_state_s *) (om = new OgreManager());
 }
 
-OgreManager::~OgreManager(){
-
-}
-
-int OgreManager::start(ei_x_buff* resp){
+GEN_CNODE_DEFINE(start){
     int rc = 0;
+    int i, idx;
+    char paths[3][256];
 
-    if( running ){
-        ei_x_format(resp, "{error,already_running}");\
+    //Must provide paths to proper OGRE configuration files 
+    if( argc != 3 ){
+        ei_x_format(resp, "{error, einval}");
+    }
+   
+    //Expects 3 filepath strings in the following order:
+    //  plugin_file, config_file, lofe_file 
+    for( i=0, idx=0; i < 3; i++ ){
+
+        //Clear memory
+        memset(paths[i], 0x00, 256);
+
+        //Decode our string arg
+        if( ei_decode_string(args, &idx, paths[i]) ){
+            rc = -1;
+            ei_x_format(resp, "{error, einval}");
+            goto start_exit;
+        }
+    }
+
+    //All seems well, start OGRE
+    rc = ((OgreManager*)state)->start(paths[0],paths[1],paths[2]);
+    if( rc ){
+        ei_x_format(resp, "{error,failed}");
         goto start_exit;
     }
-
-    if( !root ){
-        root = new Root("/etc/OGRE/plugins.cfg");
-    }
-
-    if( !root->restoreConfig() && !root->showConfigDialog() ){
-        ei_x_format(resp, "{error,not_configured}");
-        goto start_exit;
-    }
-
-    window = root->initialise( true, "OGRE" );
-
-    printf("After init!\n");
-
-    //Setup OIS
-    setupInputDevices();
-
-    printf("INPUT SETUP!\n");
-
-    //Setup Ogre Resources
-    setupResources();
-
-    root->addFrameListener(this);
-    WindowEventUtilities::addWindowEventListener(window, this);
-
-    printf("Framelistener added!\n");
-
-    printf("PROPER!!\n");
-    renderStart();
 
     ei_x_format(resp, "ok");
-
-    printf("Returning OK!\n");
 
     start_exit:
     return rc;
 }
 
-void OgreManager::stop(){
-    
-    delete root;
-
-    root = NULL;
-    window = NULL;
-    input = NULL;
-    mouse = NULL;
-    keyboard = NULL;
-
-    running = false;
-}
-
-void OgreManager::setupInputDevices(){
-    OIS::ParamList pl;
-    size_t windowHnd = 0;
-    ostringstream windowHndStr;
-
-    window->getCustomAttribute("WINDOW", &windowHnd);
-
-    windowHndStr << windowHnd;
-
-    pl.insert( make_pair(string("WINDOW"), windowHndStr.str()) );
-
-    input = OIS::InputManager::createInputSystem(pl);
-
-    keyboard = static_cast<OIS::Keyboard*>(input->createInputObject(OIS::OISKeyboard, false));
-
-    if( input->getNumberOfDevices(OIS::OISMouse) > 0 ){
-        mouse = static_cast<OIS::Mouse*>(input->createInputObject(OIS::OISMouse, false));
-    }
-
-    unsigned int width, height, depth;
-    int left, top;
-    window->getMetrics(width, height, depth, left, top);
-
-    //Tell OIS about the size of our window
-    const OIS::MouseState &ms = mouse->getMouseState();
-    ms.width = width;
-    ms.height = height;
-} 
-
-void OgreManager::setupResources() {
-
-
-}
-
-bool OgreManager::frameStarted(const FrameEvent &evt){
-   
-    keyboard->capture();
-
-    if( mouse ){
-        mouse->capture();
-    }
-
-    if( keyboard->isKeyDown(OIS::KC_ESCAPE) ){
-        this->renderStop();
-        return false;
-    }
-
-    return true;
-}
-
-void OgreManager::windowClosed(RenderWindow* rw){
-    this->renderStop();
-}
-
-int OgreManager::renderStart(){
-    
-    if( root ){
-        root->startRendering();
-    }
-
-    return 0;
-}
-
-/*int OgreManager::renderStart(){
-    int rc = 0;
-    Timer* timer = NULL;
-    unsigned long delta = 0, last = 0;
-    float delta_s = 0;
-
-
-    if( !root || !window || !keyboard ){
-        rc = -EINVAL;
-        goto render_exit;
-    }
-
-    //Reset the timer for sync
-    timer = root->getTimer();
-    timer->reset();
-    
-    while( !window->isClosed() ){
-        unsigned long current = timer->getMilliseconds();
-        
-        if( (delta = (current - last)) <= 0 ){
-            continue;
-        }
-        
-        last = current;
-        delta_s = 0.001f * float(delta);
-
-        //Capture the keyboard events
-        keyboard->capture();
-        if( keyboard->isKeyDown(OIS::KC_ESCAPE) ){
-            break;
-        }
-
-        window->update(false);
-        window->swapBuffers(true);
-
-        root->renderOneFrame();
-
-        WindowEventUtilities::messagePump();
-    }
-
-    renderStop();
-
-    render_exit:
-    return rc;
-}*/
-
-void OgreManager::renderStop(){
-
-    if( input ){
-
-        if( mouse ){
-            input->destroyInputObject(mouse);
-            mouse = NULL;
-        }
-
-        if( keyboard ){
-            input->destroyInputObject(keyboard);
-            keyboard = NULL;
-        }
-
-        OIS::InputManager::destroyInputSystem(input);
-        
-        input = NULL;
-    }
-
-    if( root ){
-        root->removeFrameListener(this);
-        WindowEventUtilities::removeWindowEventListener(window, this);
-
-        root->queueEndRendering();
-    }
-}
-
-extern "C" {
-
-GEN_CNODE_STATE_NEW() {
-    return (struct gen_cnode_lib_state_s *) new OgreManager();
-}
-
-GEN_CNODE_DEFINE(start){
-    return ((OgreManager*)state)->start(resp);
-}
-
 GEN_CNODE_DEFINE(stop){
     ((OgreManager*)state)->stop();
+    ei_x_format(resp,"ok");
     return 0;
 }
 
-GEN_CNODE_DEFINE(render_start){
-    return ((OgreManager*)state)->renderStart();
+GEN_CNODE_DEFINE(renderStart){
+    int rc = 0, idx = 0;
+    uint64_t width= 0, height = 0; 
+    int fullscreen = false;
+    char title[256];
+
+    //Expect window: title, width, height, fullscreen
+    if( argc != 4 ){
+        rc = -1;
+        ei_x_format(resp, "{error, einval}");
+        goto exit;
+    }
+
+    //Clear title for good measure
+    memset(title, 0x00, sizeof(title));
+
+    //Decode in expected order
+    if( ei_decode_string(args, &idx, title) ||
+        ei_decode_ulong(args, &idx, &width) ||
+        ei_decode_ulong(args, &idx, &height) ||
+        ei_decode_boolean(args, &idx, &fullscreen) )
+    {
+        rc = -1;
+        ei_x_format(resp, "{error, einval}");
+        goto exit;
+    } 
+
+    //Open the render window
+    rc = ((OgreManager*)state)->renderStart(title, width, height, fullscreen);
+    if( rc ){
+        ei_x_format(resp, "{error, failed}");
+        goto exit;
+    }
+
+    ei_x_format(resp, "ok");
+
+    exit:
+    return rc;
 }
 
-GEN_CNODE_DEFINE(render_stop){
+GEN_CNODE_DEFINE(renderStop){
     ((OgreManager*)state)->renderStop();
+    
     return 0;
 }
-
 }

@@ -2,7 +2,6 @@ include ../Makedefs
 
 LIB_TARGETS := libOgreManager.so 
 
-CFLAGS += -I../include
 CFLAGS += -I../packages/gen_cnode/include
 CFLAGS += -I$(ERL_INTERFACE_INCLUDE)
 
@@ -26,12 +25,19 @@ clean:
 clobber: clean
 	rm -f $(LIB_TARGETS)
 
+OgreManager.o: OgreManager.cpp OgreManager.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
+InputManager.o: InputManager.cpp InputManager.h
+	$(CPP) -c -o $@ $(CFLAGS) $< 
+
+DotSceneLoader.o: DotSceneLoader.cpp DotSceneLoader.h
+	$(CPP) -c -o $@ $(CFLAGS) $< 
+
 libOgreManager.o: libOgreManager.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libOgreManager.so: CFLAGS += -fPIC $(shell pkg-config --cflags OGRE)
-libOgreManager.so: CFLAGS += $(shell pkg-config --cflags OIS)
-libOgreManager.so: LFLAGS += $(shell pkg-config --libs OGRE)
-libOgreManager.so: LFLAGS += $(shell pkg-config --libs OIS)
-libOgreManager.so: libOgreManager.o
+libOgreManager.so: CFLAGS += -fPIC -I$(ERL_INTERFACE_INCLUDE) $(shell pkg-config --cflags OGRE CEGUI OIS lua5.1)
+libOgreManager.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei $(shell pkg-config --libs OGRE CEGUI OIS tinyxml lua5.1)
+libOgreManager.so: OgreManager.o DotSceneLoader.o InputManager.o libOgreManager.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -o $@
