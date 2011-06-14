@@ -2,6 +2,8 @@
 #define OGREMANAGER_H
 
 #include <OGRE/Ogre.h>
+#include <CEGUI.h>
+#include <RendererModules/Ogre/CEGUIOgreRenderer.h>
 #include <OIS/OIS.h>
 
 //Lua Support
@@ -11,7 +13,6 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include "DotSceneLoader.h"
 #include "InputManager.h"
 
 using namespace std;
@@ -26,16 +27,17 @@ class OgreManager : public WindowEventListener,
         ~OgreManager();
 
         //Setup and tear down of ogre root
-        int start(string plugins, string config, string log);
+        int start(string title, string plugins, string config, string log);
         void stop();
 
         //Setup and tear down of input and rendering
-        int renderStart( string title="OGRE",
-                         unsigned int width=1024, 
-                         unsigned int height=768,
-                         bool fullscreen=true );
+        int renderStart();
         void renderStop();
- 
+
+        //Module management
+        int loadModule( string module );
+        int unloadModule( );
+
         //Scene management 
         int sceneStart(int id, char* dotscene_file);
         int sceneEnd(int id);
@@ -61,6 +63,8 @@ class OgreManager : public WindowEventListener,
 
         InputManager* input;
         SceneManager* sceneManager;
+        Camera* camera;
+        Viewport* viewport;
 
         //Lua domains
         lua_State* luaApp;     //Lua scripting support overriding OM behaviours

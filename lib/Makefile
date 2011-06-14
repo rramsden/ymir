@@ -31,13 +31,10 @@ OgreManager.o: OgreManager.cpp OgreManager.h
 InputManager.o: InputManager.cpp InputManager.h
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-DotSceneLoader.o: DotSceneLoader.cpp DotSceneLoader.h
-	$(CPP) -c -o $@ $(CFLAGS) $< 
-
 libOgreManager.o: libOgreManager.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libOgreManager.so: CFLAGS += -fPIC -I$(ERL_INTERFACE_INCLUDE) $(shell pkg-config --cflags OGRE CEGUI OIS lua5.1)
-libOgreManager.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei $(shell pkg-config --libs OGRE CEGUI OIS tinyxml lua5.1)
-libOgreManager.so: OgreManager.o DotSceneLoader.o InputManager.o libOgreManager.o
+libOgreManager.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE CEGUI-OGRE OIS lua5.1)
+libOgreManager.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE CEGUI-OGRE OIS lua5.1)
+libOgreManager.so: OgreManager.o InputManager.o libOgreManager.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -o $@

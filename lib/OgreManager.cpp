@@ -2,20 +2,25 @@
 
 #include <errno.h>
 
-OgreManager::OgreManager(){
-    root = NULL;
-    window = NULL;
-    luaApp = NULL;
-    luaInGame = NULL;
-    input = NULL;
-    running = false;
+OgreManager::OgreManager() :
+    root(NULL),
+    window(NULL),
+    running(false),
+    input(NULL),
+    sceneManager(NULL),
+    camera(NULL),
+    viewport(NULL),
+    luaApp(NULL),
+    luaInGame(NULL)
+{
+
 }
 
 OgreManager::~OgreManager(){
 
 }
 
-int OgreManager::start(string plugin, string config, string log){
+int OgreManager::start(string title, string plugin, string config, string log){
     int rc = 0;
 
     if( running ){
@@ -34,7 +39,10 @@ int OgreManager::start(string plugin, string config, string log){
 
     printf("Initializing WINDOW!\n");
     if( !window ){
-        window = root->initialise( false, "OGRE" );
+        window = root->initialise( true, title );
+
+        //Bootstrap CEGUI
+        CEGUI::OgreRenderer::bootstrapSystem();
     }
 
     printf("After init!\n");
@@ -51,8 +59,6 @@ int OgreManager::start(string plugin, string config, string log){
 
     //<<HERE>> Call into lua splash screen?
 
-    loadResources();
-
     start_exit:
     return rc;
 }
@@ -68,6 +74,8 @@ void OgreManager::stop(){
         
         if( window ){
             root->detachRenderTarget(window);
+        
+            CEGUI::OgreRenderer::destroySystem();
         }
 
         delete root;
@@ -91,11 +99,62 @@ void OgreManager::stop(){
     running = false;
 }
 
-void OgreManager::loadResources() {
+int OgreManager::loadModule(string module) {
+    int rc = 0;
+    String scene = "test.scene";
+    String group = "Default";
 
+    if( module == "" ){
+        module = ".";
+    }
 
+    printf("Path = %s\n", module.c_str() );
 
+    //<<HERE>> Do something better?
+    root->addResourceLocation( module + "/Models", "FileSystem", group );
+    root->addResourceLocation( module + "/Terrain", "FileSystem", group );
+    root->addResourceLocation( module + "/Materials", "FileSystem", group );
+    root->addResourceLocation( module + "/Scripts", "FileSystem", group );
+    root->addResourceLocation( module + "/Programs", "FileSystem", group );
+    root->addResourceLocation( module + "/Scenes", "FileSystem", group );
 
+    //<<HERE>> Vector with a scene manager for each?
+    printf("0\n");
+    sceneManager = root->createSceneManager(ST_GENERIC);
+    printf("1\n");
+    
+    camera = sceneManager->createCamera("Camera");
+    camera->setPosition(Ogre::Vector3(0,0,80));
+    camera->lookAt(Ogre::Vector3(0,0,-300));
+    camera->setNearClipDistance(5);
+
+    viewport = window->addViewport(camera);
+
+    TextureManager::getSingleton().setDefaultNumMipmaps(5);
+
+    ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+
+    printf("Before parseDotScene!!\n");
+
+    Ogre::Entity* head = sceneManager->createEntity("Head","ogrehead.mesh");
+    Ogre::SceneNode* headNode = sceneManager->getRootSceneNode()->createChildSceneNode();
+
+    headNode->attachObject(head);
+
+    sceneManager->setAmbientLight(Ogre::ColourValue(0.5, 0.5, 0.5));
+
+    Ogre::Light* l = sceneManager->createLight("MainLight");
+    l->setPosition(20,80,50);
+
+    printf("After parseDotScene!\n");
+
+    return rc ;
+}
+
+int OgreManager::unloadModule() {
+    int rc = 0;
+
+    return rc;
 }
 
 bool OgreManager::frameStarted(const FrameEvent &evt){
@@ -114,11 +173,7 @@ void OgreManager::windowClosed(RenderWindow* rw){
     running = false;
 }
 
-int OgreManager::renderStart( string title,
-                              unsigned int width, 
-                              unsigned int height,
-                              bool fullscreen )
-{
+int OgreManager::renderStart(){
     int rc = 0;
 
     if( !root ){
@@ -127,7 +182,7 @@ int OgreManager::renderStart( string title,
     }
 
     //Create rendering window
-    window = root->createRenderWindow(title, width, height, fullscreen);
+    //window = root->createRenderWindow(title, width, height, fullscreen);
 
     //Capture input on main window
     if( !input ){
@@ -155,6 +210,8 @@ int OgreManager::renderStart( string title,
 
     running = true;
     window->setVisible(true);
+
+    printf("RENDERING\n");
     root->startRendering();
 
     exit:

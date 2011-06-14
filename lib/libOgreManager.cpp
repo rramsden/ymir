@@ -25,13 +25,21 @@ GEN_CNODE_STATE_NEW() {
 GEN_CNODE_DEFINE(start){
     int rc = 0;
     int i, idx;
+    char title[256];
     char paths[3][256];
 
     //Must provide paths to proper OGRE configuration files 
-    if( argc != 3 ){
+    if( argc != 4 ){
         ei_x_format(resp, "{error, einval}");
     }
    
+    memset(title, 0x00, 256);
+    if( ei_decode_string(args, &idx, title) ){
+        rc = -1;
+        ei_x_format(resp, "{error, einval}");
+        goto start_exit;
+    }
+
     //Expects 3 filepath strings in the following order:
     //  plugin_file, config_file, lofe_file 
     for( i=0, idx=0; i < 3; i++ ){
@@ -48,7 +56,7 @@ GEN_CNODE_DEFINE(start){
     }
 
     //All seems well, start OGRE
-    rc = ((OgreManager*)state)->start(paths[0],paths[1],paths[2]);
+    rc = ((OgreManager*)state)->start(title, paths[0],paths[1],paths[2]);
     if( rc ){
         ei_x_format(resp, "{error,failed}");
         goto start_exit;
@@ -66,35 +74,44 @@ GEN_CNODE_DEFINE(stop){
     return 0;
 }
 
-GEN_CNODE_DEFINE(renderStart){
+/**
+ * Loads the given Ymir module.
+ */
+GEN_CNODE_DEFINE( loadModule ){
     int rc = 0, idx = 0;
-    uint64_t width= 0, height = 0; 
-    int fullscreen = false;
-    char title[256];
+    char path[256];
 
-    //Expect window: title, width, height, fullscreen
-    if( argc != 4 ){
-        rc = -1;
-        ei_x_format(resp, "{error, einval}");
+    //Expect path to a module folder
+    if( argc != 1 ){
+        rc = -EINVAL;
+        ei_x_format(resp,"{error,einval}");
         goto exit;
     }
 
-    //Clear title for good measure
-    memset(title, 0x00, sizeof(title));
-
-    //Decode in expected order
-    if( ei_decode_string(args, &idx, title) ||
-        ei_decode_ulong(args, &idx, &width) ||
-        ei_decode_ulong(args, &idx, &height) ||
-        ei_decode_boolean(args, &idx, &fullscreen) )
-    {
-        rc = -1;
-        ei_x_format(resp, "{error, einval}");
+    //Decode path to module resources path
+    memset(path, 0x00, sizeof(path));
+    if( ei_decode_string(args, &idx, path) ){
+        rc = -EINVAL;
+        ei_x_format(resp,"{error,einval}");
         goto exit;
-    } 
+    }
+  
+    rc = ((OgreManager*)state)->loadModule(path); 
+    if( rc ){
+        ei_x_format(resp, "{error, failed}");
+        goto exit;
+    }
+
+    exit:
+    return rc;
+}
+
+
+GEN_CNODE_DEFINE(renderStart){
+    int rc = 0;
 
     //Open the render window
-    rc = ((OgreManager*)state)->renderStart(title, width, height, fullscreen);
+    rc = ((OgreManager*)state)->renderStart();
     if( rc ){
         ei_x_format(resp, "{error, failed}");
         goto exit;

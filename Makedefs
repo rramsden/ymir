@@ -25,8 +25,8 @@ ifeq ($(PREFIX),)
 	export PREFIX=$(shell pwd)/build
 endif
 
-INSTALL_DIR := $(PREFIX)
-SRC_DIR := $(INSTALL_DIR)/src
-LIB_DIR := $(INSTALL_DIR)/lib
-PRIV_DIR := $(INSTALL_DIR)/priv
-EBIN_DIR := $(INSTALL_DIR)/ebin
+export INSTALL_DIR=$(PREFIX)
+export SRC_DIR=$(INSTALL_DIR)/src
+export LIB_DIR=$(INSTALL_DIR)/lib
+export PRIV_DIR=$(INSTALL_DIR)/priv
+export EBIN_DIR=$(INSTALL_DIR)/ebin
