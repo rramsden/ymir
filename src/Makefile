@@ -19,8 +19,7 @@ clean:
 clobber: clean ;
 
 install: all ;
-#	install -m 0755 $(ERL_FILES) $(SRC_DIR)
-#	install -m 0755 $(APP_FILES) $(EBIN_DIR)
-#	install -m 0755 $(BEAM_TARGETS) $(EBIN_DIR)
+	install -m 644 $(BEAM_TARGETS) $(EBIN_DIR)
+	install -m 644 $(APP_TARGETS) $(EBIN_DIR)
 
 uninstall: ;

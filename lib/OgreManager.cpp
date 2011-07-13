@@ -4,14 +4,12 @@
 
 OgreManager::OgreManager() :
     root(NULL),
+    log(NULL),
     window(NULL),
-    running(false),
+    rendering(false),
     input(NULL),
-    sceneManager(NULL),
-    camera(NULL),
     viewport(NULL),
-    luaApp(NULL),
-    luaInGame(NULL)
+    scene(NULL)
 {
 
 }
@@ -20,24 +18,55 @@ OgreManager::~OgreManager(){
 
 }
 
-int OgreManager::start(string title, string plugin, string config, string log){
+void OgreManager::logNormal( string msg ){
+
+    if( log ){
+        log->logMessage(msg, Ogre::LML_NORMAL);
+    } else {
+        fprintf(stderr, "INFO:  %s\n", msg.c_str());
+    }
+}
+
+void OgreManager::logCritical( string msg ){
+
+    if( log ){
+        log->logMessage(msg, Ogre::LML_CRITICAL);
+    } else {
+        fprintf(stderr, "CRITICAL:  %s\n", msg.c_str());
+    }
+}
+
+
+int OgreManager::start(string title, string plugin, string config, string logFile){
     int rc = 0;
 
-    if( running ){
+    if( rendering ){
 		rc = -EALREADY;
         goto start_exit;
     }
 
     if( !root ){
-        root = new Root(plugin, config, log);
+        root = new Root(plugin, config, logFile);
     }
 
+    if( !log ){
+        log = Ogre::LogManager::getSingleton().getDefaultLog();
+    }
+        
     if( !root->restoreConfig() && !root->showConfigDialog() ){
 		rc = -ENOTSUP;
         goto start_exit;
     }
 
-    printf("Initializing WINDOW!\n");
+    if( !scene ){
+        scene = root->createSceneManager(ST_GENERIC);
+    
+        scene->setAmbientLight(ColourValue(0.5,0.5,0.5));
+    }
+
+
+    logNormal("Initializing WINDOW!");
+
     if( !window ){
         window = root->initialise( true, title );
 
@@ -45,20 +74,25 @@ int OgreManager::start(string title, string plugin, string config, string log){
         CEGUI::OgreRenderer::bootstrapSystem();
     }
 
-    printf("After init!\n");
+    //Capture input on main window
+    logNormal("INPUT SETUP!");
+    if( !input ){
+        input = InputManager::getSingletonPtr();
+        input->initialise(window);
+   
+        if( input->getMouse() ){ 
+            input->getMouse()->setEventCallback(input);
+        }
+
+        if( input->getKeyboard() ){
+            input->getKeyboard()->setEventCallback(input);
+        }
+    }
+
+    TextureManager::getSingleton().setDefaultNumMipmaps(5);
+
+    logNormal("After init!");
  
-    if( !luaApp ){
-        luaApp = lua_open();
-    }
-
-    //<<HERE>> Register application level lua functions
-
-    if( !luaInGame ){
-        luaInGame = lua_open();
-    }
-
-    //<<HERE>> Call into lua splash screen?
-
     start_exit:
     return rc;
 }
@@ -81,25 +115,115 @@ void OgreManager::stop(){
         delete root;
     }
 
-    if( luaApp ){
-        lua_close(luaApp);
-    }
-
-    if( luaInGame ){
-        lua_close(luaInGame);
-    }
-
     root = NULL;
+    scene = NULL;
     window = NULL;
     input = NULL;
-   
-    luaApp = NULL;
-    luaInGame = NULL;
-
-    running = false;
+    rendering = false;
 }
 
-int OgreManager::loadModule(string module) {
+void OgreManager::addResourceLocation( string path, 
+                                       string type, 
+                                       string group, 
+                                       bool recurse = false )
+{
+
+    if( root ){
+        root->addResourceLocation(path, type, group, recurse);
+    }
+}
+
+void OgreManager::addEventHandler(OgreEvent* handler){
+    
+    logNormal("YEAH??");
+    
+    if( handler && input){
+        
+        logNormal("Adding handler for keyboard and mouse!");
+        input->addKeyListener(handler, "Events");
+        input->addMouseListener(handler, "Events");
+    }
+}
+
+void OgreManager::initialiseAllResourceGroups() {
+
+    if( root ){
+        ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
+    }
+}
+
+void OgreManager::createObject( OgreObject* object ){
+
+    if( !scene ){
+        logCritical("No scene active!  Unable to add a camera node!"); 
+        return;
+    }
+
+    if( rendering ){ //If rendering, add camera creation to work queues. 
+
+        //<<HERE>> TODO} 
+    } else { //Otherwise, safe to manually add the camera
+
+        object->addToScene(scene);
+   }
+}
+
+void OgreManager::destroyObject( const String& uuid, const OgreObjectType& type ){
+
+    if( !scene ){
+
+
+    }
+
+    if( rendering ){
+        //<<HERE>> TODO
+    } else {
+    
+        /*switch(type) {
+
+            case OBJECT_CAMERA:
+
+                break;
+
+            case OBJECT_LIGHT:
+
+                break;
+
+            case OBJECT_ENTITY:
+
+                break;
+
+            default:
+
+                break;
+        }*/   
+    }
+}
+
+void OgreManager::setViewport( const String& name ){
+    Camera* temp = NULL;
+
+    if( !window ){ 
+        logCritical("No render window active!  Unable to add camera!"); 
+        return;
+    }
+
+    if( rendering ){
+        //<<HERE>> TODO
+    } else {
+   
+        temp = scene->getCamera(name);
+
+        if( viewport ){
+            //<<HERE>> TODO
+        } else {
+            viewport = window->addViewport(temp);
+        }
+    }
+}
+
+
+/*int OgreManager::loadModule(string module) {
     int rc = 0;
     String scene = "test.scene";
     String group = "Default";
@@ -151,11 +275,43 @@ int OgreManager::loadModule(string module) {
     return rc ;
 }
 
-int OgreManager::unloadModule() {
-    int rc = 0;
+int OgreManager::sceneRegister(string uuid, string type){
 
-    return rc;
+    if( scenes.end() == scenes.find(uuid) ){
+        return -EALREADY;
+    }
+
+    scenes.insert(pair<string, Ogre::SceneManager*>(uuid, root->createSceneManager(type)));
+    return 0;
 }
+
+void OgreManager::sceneOpen(string uuid, string cameraName){
+    std::map<string, SceneManager*>::iterator iter = NULL;
+
+    if( root && window && (iter = scenes.find(uuid)) != scenes.end() ){
+   
+        //<<HERE>> Fade to black or something?
+        if( scene ){
+
+        }
+
+        //Locate the camera intended opening camera
+        if( !(Camera* camera = scene->getCamera(cameraName)) ){
+            //<<HERE>> camera not found!
+        }
+
+        //Update active scene
+        scene = iter.second;
+
+        //Update viewport 
+        viewport = window->addViewport(camera);
+    }
+}
+
+void sceneClose(){
+
+
+}*/
 
 bool OgreManager::frameStarted(const FrameEvent &evt){
    
@@ -165,12 +321,12 @@ bool OgreManager::frameStarted(const FrameEvent &evt){
         this->renderStop();
     }
 
-    return running;
+    return rendering;
 }
 
 void OgreManager::windowClosed(RenderWindow* rw){
 
-    running = false;
+    rendering = false;
 }
 
 int OgreManager::renderStart(){
@@ -181,37 +337,18 @@ int OgreManager::renderStart(){
 		goto exit;
     }
 
-    //Create rendering window
-    //window = root->createRenderWindow(title, width, height, fullscreen);
-
-    //Capture input on main window
-    if( !input ){
-        input = InputManager::getSingletonPtr();
-        input->initialise(window);
-   
-        if( input->getMouse() ){ 
-            input->getMouse()->setEventCallback(input);
-        }
-
-        if( input->getKeyboard() ){
-            input->getKeyboard()->setEventCallback(input);
-        }
-    }
-
-    printf("INPUT SETUP!\n");
-    
     //Register OM as a framelistener and windoweventlistener
     root->addFrameListener(this);
     WindowEventUtilities::addWindowEventListener(window, this);
     
-    printf("Framelistener added!\n");
+    logNormal("Framelistener added!");
    
     //<<HERE>> Detach splash and render main window
 
-    running = true;
+    rendering = true;
     window->setVisible(true);
 
-    printf("RENDERING\n");
+    logNormal("RENDERING");
     root->startRendering();
 
     exit:
@@ -276,6 +413,6 @@ void OgreManager::renderStop(){
         input = NULL;
     }
 
-    running = false;
+    rendering = false;
 }
 
