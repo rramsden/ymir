@@ -7,9 +7,12 @@ OgreManager::OgreManager() :
     log(NULL),
     window(NULL),
     rendering(false),
-    input(NULL),
+
+    em(NULL),
     viewport(NULL),
-    scene(NULL)
+    scene(NULL),
+    channel(0),
+    queue(NULL)
 {
 
 }
@@ -58,6 +61,15 @@ int OgreManager::start(string title, string plugin, string config, string logFil
         goto start_exit;
     }
 
+    if( !queue ){
+        queue = root->getWorkQueue();
+
+        //Register OgreManager channel
+        channel = queue->getChannel("OgreManager");
+
+        printf("CHANNEL! %d\n", channel);
+    }
+
     if( !scene ){
         scene = root->createSceneManager(ST_GENERIC);
     
@@ -76,17 +88,19 @@ int OgreManager::start(string title, string plugin, string config, string logFil
 
     //Capture input on main window
     logNormal("INPUT SETUP!");
-    if( !input ){
-        input = InputManager::getSingletonPtr();
-        input->initialise(window);
+    if( !em ){
+        em = EventManager::getSingletonPtr();
+        em->initialise(window);
    
-        if( input->getMouse() ){ 
-            input->getMouse()->setEventCallback(input);
+        /*if( em->getMouse() ){ 
+            em->getMouse()->setEventCallback(em);
         }
 
-        if( input->getKeyboard() ){
-            input->getKeyboard()->setEventCallback(input);
-        }
+        if( em->getKeyboard() ){
+            em->getKeyboard()->setEventCallback(em);
+        }*/
+
+        root->addFrameListener(em);
     }
 
     TextureManager::getSingleton().setDefaultNumMipmaps(5);
@@ -102,8 +116,8 @@ void OgreManager::stop(){
     if( root ){
         root->shutdown();
         
-        if( input ){
-            delete input;
+        if( em ){
+            delete em;
         }
         
         if( window ){
@@ -118,7 +132,7 @@ void OgreManager::stop(){
     root = NULL;
     scene = NULL;
     window = NULL;
-    input = NULL;
+    em = NULL;
     rendering = false;
 }
 
@@ -133,15 +147,14 @@ void OgreManager::addResourceLocation( string path,
     }
 }
 
-void OgreManager::addEventHandler(OgreEvent* handler){
+void OgreManager::addEventListener(OgreEventListener* listener){
     
     logNormal("YEAH??");
     
-    if( handler && input){
+    if( listener && em){
         
         logNormal("Adding handler for keyboard and mouse!");
-        input->addKeyListener(handler, "Events");
-        input->addMouseListener(handler, "Events");
+        em->addEventListener(listener, "Events");
     }
 }
 
@@ -152,23 +165,28 @@ void OgreManager::initialiseAllResourceGroups() {
     }
 }
 
-void OgreManager::createObject( OgreObject* object ){
+void OgreManager::addObject( OgreObject* object ){
 
     if( !scene ){
         logCritical("No scene active!  Unable to add a camera node!"); 
         return;
     }
 
-    if( rendering ){ //If rendering, add camera creation to work queues. 
+    object->addToScene(scene);
 
-        //<<HERE>> TODO} 
+    delete object;
+
+    /*if( rendering ){ //If rendering, add camera creation to work queues. 
+
+        //<<HERE>> TODO}
+        object->addToScene(scene);
     } else { //Otherwise, safe to manually add the camera
 
         object->addToScene(scene);
-   }
+   }*/
 }
 
-void OgreManager::destroyObject( const String& uuid, const OgreObjectType& type ){
+void OgreManager::removeObject( const String& uuid, const OgreObjectType& type ){
 
     if( !scene ){
 
@@ -222,108 +240,6 @@ void OgreManager::setViewport( const String& name ){
     }
 }
 
-
-/*int OgreManager::loadModule(string module) {
-    int rc = 0;
-    String scene = "test.scene";
-    String group = "Default";
-
-    if( module == "" ){
-        module = ".";
-    }
-
-    printf("Path = %s\n", module.c_str() );
-
-    //<<HERE>> Do something better?
-    root->addResourceLocation( module + "/Models", "FileSystem", group );
-    root->addResourceLocation( module + "/Terrain", "FileSystem", group );
-    root->addResourceLocation( module + "/Materials", "FileSystem", group );
-    root->addResourceLocation( module + "/Scripts", "FileSystem", group );
-    root->addResourceLocation( module + "/Programs", "FileSystem", group );
-    root->addResourceLocation( module + "/Scenes", "FileSystem", group );
-
-    //<<HERE>> Vector with a scene manager for each?
-    printf("0\n");
-    sceneManager = root->createSceneManager(ST_GENERIC);
-    printf("1\n");
-    
-    camera = sceneManager->createCamera("Camera");
-    camera->setPosition(Ogre::Vector3(0,0,80));
-    camera->lookAt(Ogre::Vector3(0,0,-300));
-    camera->setNearClipDistance(5);
-
-    viewport = window->addViewport(camera);
-
-    TextureManager::getSingleton().setDefaultNumMipmaps(5);
-
-    ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
-
-    printf("Before parseDotScene!!\n");
-
-    Ogre::Entity* head = sceneManager->createEntity("Head","ogrehead.mesh");
-    Ogre::SceneNode* headNode = sceneManager->getRootSceneNode()->createChildSceneNode();
-
-    headNode->attachObject(head);
-
-    sceneManager->setAmbientLight(Ogre::ColourValue(0.5, 0.5, 0.5));
-
-    Ogre::Light* l = sceneManager->createLight("MainLight");
-    l->setPosition(20,80,50);
-
-    printf("After parseDotScene!\n");
-
-    return rc ;
-}
-
-int OgreManager::sceneRegister(string uuid, string type){
-
-    if( scenes.end() == scenes.find(uuid) ){
-        return -EALREADY;
-    }
-
-    scenes.insert(pair<string, Ogre::SceneManager*>(uuid, root->createSceneManager(type)));
-    return 0;
-}
-
-void OgreManager::sceneOpen(string uuid, string cameraName){
-    std::map<string, SceneManager*>::iterator iter = NULL;
-
-    if( root && window && (iter = scenes.find(uuid)) != scenes.end() ){
-   
-        //<<HERE>> Fade to black or something?
-        if( scene ){
-
-        }
-
-        //Locate the camera intended opening camera
-        if( !(Camera* camera = scene->getCamera(cameraName)) ){
-            //<<HERE>> camera not found!
-        }
-
-        //Update active scene
-        scene = iter.second;
-
-        //Update viewport 
-        viewport = window->addViewport(camera);
-    }
-}
-
-void sceneClose(){
-
-
-}*/
-
-bool OgreManager::frameStarted(const FrameEvent &evt){
-   
-    input->capture();
-
-    if( input->getKeyboard()->isKeyDown(OIS::KC_ESCAPE) ){
-        this->renderStop();
-    }
-
-    return rendering;
-}
-
 void OgreManager::windowClosed(RenderWindow* rw){
 
     rendering = false;
@@ -337,82 +253,19 @@ int OgreManager::renderStart(){
 		goto exit;
     }
 
-    //Register OM as a framelistener and windoweventlistener
-    root->addFrameListener(this);
-    WindowEventUtilities::addWindowEventListener(window, this);
-    
-    logNormal("Framelistener added!");
-   
-    //<<HERE>> Detach splash and render main window
-
     rendering = true;
     window->setVisible(true);
 
     logNormal("RENDERING");
     root->startRendering();
 
+    rendering = false;
+
     exit:
     return rc;
 }
 
-/*int OgreManager::renderStart(){
-    int rc = 0;
-    Timer* timer = NULL;
-    unsigned long delta = 0, last = 0;
-    float delta_s = 0;
-
-
-    if( !root || !window || !keyboard ){
-        rc = -EINVAL;
-        goto render_exit;
-    }
-
-    //Reset the timer for sync
-    timer = root->getTimer();
-    timer->reset();
-    
-    while( !window->isClosed() ){
-        unsigned long current = timer->getMilliseconds();
-        
-        if( (delta = (current - last)) <= 0 ){
-            continue;
-        }
-        
-        last = current;
-        delta_s = 0.001f * float(delta);
-
-        //Capture the keyboard events
-        keyboard->capture();
-        if( keyboard->isKeyDown(OIS::KC_ESCAPE) ){
-            break;
-        }
-
-        window->update(false);
-        window->swapBuffers(true);
-
-        root->renderOneFrame();
-
-        WindowEventUtilities::messagePump();
-    }
-
-    renderStop();
-
-    render_exit:
-    return rc;
-}*/
-
 void OgreManager::renderStop(){
-
-    //Queue up the end of rendering
-    //if( root ){
-    //    root->removeFrameListener(this);
-    //    WindowEventUtilities::removeWindowEventListener(window, this);
-    //}
-    if( input ){
-        delete input;
-        input = NULL;
-    }
-
-    rendering = false;
+    em->setRendering(false);
 }
 

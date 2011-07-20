@@ -25,7 +25,7 @@ clean:
 clobber: clean
 	rm -f $(LIB_TARGETS)
 
-OgreEvent.o: OgreEvent.cpp OgreEvent.h
+OgreEventListener.o: OgreEventListener.cpp OgreEventListener.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 OgreObject.o: OgreObject.cpp OgreObject.h
@@ -34,7 +34,7 @@ OgreObject.o: OgreObject.cpp OgreObject.h
 OgreManager.o: OgreManager.cpp OgreManager.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-InputManager.o: InputManager.cpp InputManager.h
+EventManager.o: EventManager.cpp EventManager.h
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
 YmirObject.o: YmirObject.cpp YmirObject.h
@@ -45,5 +45,5 @@ libOgreManager.o: libOgreManager.cpp
 
 libOgreManager.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE CEGUI-OGRE OIS lua5.1)
 libOgreManager.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE CEGUI-OGRE OIS lua5.1)
-libOgreManager.so: OgreObject.o OgreEvent.o OgreManager.o InputManager.o libOgreManager.o
+libOgreManager.so: OgreObject.o OgreEventListener.o OgreManager.o EventManager.o libOgreManager.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -o $@

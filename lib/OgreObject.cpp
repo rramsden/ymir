@@ -117,8 +117,14 @@ int OgreCamera::decodeProp( const string& prop, char* data, int* idx ){
 }
 
 int OgreCamera::addToScene( SceneManager* scene ){
-    Camera* camera = scene->createCamera(uuid);
+    Camera* camera = NULL; 
     any temp; 
+
+    try {
+        camera = scene->getCamera(uuid); 
+    } catch( ... ){
+        camera = scene->createCamera(uuid);
+    }
 
     if( hasProperty("position", &temp) ){
         camera->setPosition(any_cast<Vector3>(temp));
@@ -167,9 +173,14 @@ int OgreLight::decodeProp( const string& prop, char* args, int* idx ){
 }
 
 int OgreLight::addToScene( SceneManager* scene ){
+    Light* light = NULL;
     any temp;
 
-    Light* light = scene->createLight(uuid);
+    try {
+        light = scene->getLight(uuid);
+    } catch( ... ){
+        light = scene->createLight(uuid);
+    }
 
     if( hasProperty("position", &temp) ){
         light->setPosition(any_cast<Vector3>(temp));
@@ -207,25 +218,34 @@ int OgreEntity::decodeProp( const string& prop, char* args, int* idx ){
 }
 
 int OgreEntity::addToScene( SceneManager* scene ){
+    Ogre::Entity* entity = NULL;
+    SceneNode* node = NULL;
     any temp;
     string mesh = "";
 
-    //Must have at least have a mesh defined
-    if( !hasProperty("mesh", &temp) ){
-        return -1;
-    } 
+    try {
+        entity = scene->getEntity(uuid);
+        node = entity->getParentSceneNode();
+    } catch (...) {
+
+        //Must have at least have a mesh defined
+        if( !hasProperty("mesh", &temp) ){
+            return -1;
+        } 
     
-    mesh = any_cast<string>(temp);
+        mesh = any_cast<string>(temp);
 
-    Ogre::Entity* entity = scene->createEntity(uuid, mesh);
+        entity = scene->createEntity(uuid, mesh);
+        node = scene->getRootSceneNode()->createChildSceneNode();
 
-    printf("Created enitity %s with mesh: %s\n", uuid.c_str(), mesh.c_str());
+        node->attachObject(entity);
+
+        printf("Created enitity %s with mesh: %s\n", uuid.c_str(), mesh.c_str());
+    }
 
     if( hasProperty("castShadows", &temp) ){
         entity->setCastShadows(any_cast<bool>(temp));
     }
-
-    SceneNode* node = scene->getRootSceneNode()->createChildSceneNode();
 
     if( hasProperty("position", &temp) ){
         node->setPosition(any_cast<Vector3>(temp));
@@ -242,8 +262,6 @@ int OgreEntity::addToScene( SceneManager* scene ){
     /*if( hasProperty("lookAt", &temp) ){
         node->lookAt(any_cast<Vector3>(temp));
     }*/
-
-    node->attachObject(entity);
 
     return 0;
 }
@@ -296,23 +314,18 @@ int decodeReal( char*data, int* idx, Real* output ){
 }
 
 int decodeColourVal( char* data, int* idx, ColourValue* output ){
-    int rc = 0, len = 0;
+    int rc = 0, arity = 0;
     double r = 0, g = 0, b = 0, a = 0;
 
-    if( ei_decode_list_header(data, idx, &len) || (len != 4) ){
+    if( ei_decode_tuple_header(data, idx, &arity) || (arity != 4) ){
         rc = -EINVAL;
         goto exit;
     } 
 
-    for( int i = 0; i < len; i++ ){
-        int arity = 0;
-        string name = "";
+    for( int i = 0; i < arity; i++ ){
         double val = 0;
 
-        if( ei_decode_tuple_header(data, idx, &arity) || 
-            (arity != 2) || 
-            decodeString(data, idx, &name) ||
-            ei_decode_double(data, idx, &val) )
+        if( ei_decode_double(data, idx, &val) )
         {
             rc = -EINVAL;
             goto exit;
@@ -339,12 +352,7 @@ int decodeColourVal( char* data, int* idx, ColourValue* output ){
 
     }
 
-    //Decode empty list
-    if( ei_decode_list_header(data, idx, &len) || len ){
-        rc = -EINVAL;
-    } else {
-        *output = ColourValue(r,g,b,a);
-    }
+    *output = ColourValue(r,g,b,a);
 
     exit:
     return rc;
@@ -352,23 +360,18 @@ int decodeColourVal( char* data, int* idx, ColourValue* output ){
 
 int decodeVector3( char* data, int* idx, Vector3* output ){
     int rc = 0;
-    int len = 0;
+    int arity = 0;
     Real x, y, z;
 
-    if( ei_decode_list_header(data, idx, &len) || (len != 3) ){
+    if( ei_decode_tuple_header(data, idx, &arity) || (arity != 3) ){
         rc = -EINVAL;
         goto exit;
     }
 
-    for( int i = 0; i < len; i++ ){
-        int arity = 0;
-        string name = "";
+    for( int i = 0; i < arity; i++ ){
         double val = 0;
 
-        if( ei_decode_tuple_header(data, idx, &arity) || 
-            (arity != 2) || 
-            decodeString(data, idx, &name) ||
-            ei_decode_double(data, idx, &val) )
+        if( ei_decode_double(data, idx, &val) )
         {
             rc = -EINVAL;
             goto exit;
@@ -390,36 +393,26 @@ int decodeVector3( char* data, int* idx, Vector3* output ){
         }
     }
 
-    //Decode empty list
-    if( ei_decode_list_header(data, idx, &len) || len ){
-        rc = -EINVAL;
-    } else {
-        *output = Vector3(x,y,z);
-    }
-
+    *output = Vector3(x,y,z);
+    
     exit:
     return rc;
 }
 
 int decodeVector4( char* data, int* idx, Vector4* output ){
     int rc = 0;
-    int len = 0;
+    int arity = 0;
     Real x, y, z, w;
 
-    if( ei_decode_list_header(data, idx, &len) || (len != 4) ){
+    if( ei_decode_tuple_header(data, idx, &arity) || (arity != 4) ){
         rc = -EINVAL;
         goto exit;
     }
 
-    for( int i = 0; i < len; i++ ){
-        int arity = 0;
-        string name = "";
+    for( int i = 0; i < arity; i++ ){
         double val = 0;
 
-        if( ei_decode_tuple_header(data, idx, &arity) || 
-            (arity != 2) || 
-            decodeString(data, idx, &name) ||
-            ei_decode_double(data, idx, &val) )
+        if( ei_decode_double(data, idx, &val) )
         {
             rc = -EINVAL;
             goto exit;
@@ -445,12 +438,7 @@ int decodeVector4( char* data, int* idx, Vector4* output ){
         }
     }
 
-    //Decode empty list
-    if( ei_decode_list_header(data, idx, &len) || len ){
-        rc = -EINVAL;
-    } else {
-        *output = Vector4(x,y,z, w);
-    }
+    *output = Vector4(x,y,z, w);
 
     exit:
     return rc;

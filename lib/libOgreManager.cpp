@@ -3,7 +3,7 @@
 #include "gen_cnode.h"
 #include "OgreManager.h"
 #include "OgreObject.h"
-#include "OgreEvent.h"
+#include "OgreEventListener.h"
 
 using namespace std;
 using namespace Ogre;
@@ -126,7 +126,7 @@ GEN_CNODE_DEFINE( initialiseAllResourceGroups ){
 }
 
 //Expects a list of {uuid:string, type:string, [{prop:string, value:varies},...]}
-GEN_CNODE_DEFINE( createObject ){
+GEN_CNODE_DEFINE( addObject ){
     int rc = 0;
 
     //Decode each camera object
@@ -170,7 +170,7 @@ GEN_CNODE_DEFINE( createObject ){
         if( object && !(object->decodeProps(args, &idx)) ){
             
            //Looks good, tell OgreManager to add the object
-           ((OgreManager*)state)->createObject(object);
+           ((OgreManager*)state)->addObject(object);
 
             gen_cnode_format(resp, "ok");
         } else {
@@ -184,7 +184,7 @@ GEN_CNODE_DEFINE( createObject ){
 
 //Expects a list of {uuid:string, type:string}
 //and calls the appropriate scene removal function
-GEN_CNODE_DEFINE( destroyObject ){
+GEN_CNODE_DEFINE( removeObject ){
     int rc = 0;
    
     for( int i = 0, idx = 0; i < argc; i++ ){
@@ -201,7 +201,7 @@ GEN_CNODE_DEFINE( destroyObject ){
             break;
         }
 
-        ((OgreManager*)state)->destroyObject(uuid, type);
+        ((OgreManager*)state)->removeObject(uuid, type);
     } 
 
     return rc;
@@ -216,20 +216,17 @@ GEN_CNODE_DEFINE( setViewport ){
         goto exit;
     }
 
-    printf("For the love of pete:  %s\n", uuid.c_str());
-
     ((OgreManager*)state)->setViewport(uuid);
 
     gen_cnode_format(resp, "ok");
 
     exit:
     return rc;
-
 }
 
 GEN_CNODE_DEFINE( addEventHandler ){
 
-    ((OgreManager*)state)->addEventHandler(new OgreEvent());
+    ((OgreManager*)state)->addEventListener(new OgreEventListener());
 
     gen_cnode_format(resp, "ok");
 
@@ -254,7 +251,7 @@ GEN_CNODE_DEFINE(renderStart){
 
 GEN_CNODE_DEFINE(renderStop){
     ((OgreManager*)state)->renderStop();
-    
+    gen_cnode_format(resp, "ok");
     return 0;
 }
 }

@@ -1,12 +1,11 @@
-#include "OgreEvent.h"
+#include "OgreEventListener.h"
 
-extern "C" {
 #include <gen_cnode.h>
-}
 
 using namespace OIS;
+using namespace Ogre;
 
-bool OgreEvent::keyPressed( const KeyEvent& e ){
+bool OgreEventListener::keyPressed( const KeyEvent& e ){
     ei_x_buff key = {0};
 
     ei_x_new(&key);
@@ -20,7 +19,7 @@ bool OgreEvent::keyPressed( const KeyEvent& e ){
     return true;
 }
 
-bool OgreEvent::keyReleased( const KeyEvent& e ){
+bool OgreEventListener::keyReleased( const KeyEvent& e ){
     ei_x_buff key = {0};
 
     ei_x_new(&key);
@@ -34,7 +33,7 @@ bool OgreEvent::keyReleased( const KeyEvent& e ){
     return true;
 }
 
-bool OgreEvent::mouseMoved( const MouseEvent& e ){
+bool OgreEventListener::mouseMoved( const MouseEvent& e ){
     ei_x_buff event = {0};
 
     ei_x_new(&event);
@@ -48,7 +47,7 @@ bool OgreEvent::mouseMoved( const MouseEvent& e ){
     return true;
 }
 
-bool OgreEvent::mousePressed( const MouseEvent& e, MouseButtonID id ){
+bool OgreEventListener::mousePressed( const MouseEvent& e, MouseButtonID id ){
     ei_x_buff event = {0};
 
     ei_x_new(&event);
@@ -62,7 +61,7 @@ bool OgreEvent::mousePressed( const MouseEvent& e, MouseButtonID id ){
     return true;
 }
 
-bool OgreEvent::mouseReleased( const MouseEvent& e, MouseButtonID id ){
+bool OgreEventListener::mouseReleased( const MouseEvent& e, MouseButtonID id ){
     ei_x_buff event = {0};
 
     ei_x_new(&event);
@@ -75,8 +74,19 @@ bool OgreEvent::mouseReleased( const MouseEvent& e, MouseButtonID id ){
     return true;
 }
 
+bool OgreEventListener::frameStarted( const FrameEvent& evt ) {
+    
+    gen_cnode_notify("frameStarted", NULL);
+    return true;
+}
+
+bool OgreEventListener::frameEnded( const FrameEvent& evt ){
+    //gen_cnode_notify("frameEnded");
+    return true;
+}
+
 //Exported utility functions
-int OgreEvent::encodeMouseEvent( MouseButtonID id,
+int OgreEventListener::encodeMouseEvent( MouseButtonID id,
                                  const MouseEvent& event, 
                                  ei_x_buff* output ){
 
@@ -106,4 +116,8 @@ int OgreEvent::encodeMouseEvent( MouseButtonID id,
     }
 
     return 0;
+}
+
+void OgreEventListener::windowClosed( RenderWindow *window ){
+    gen_cnode_notify("windowClosed", NULL);
 }

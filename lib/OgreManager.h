@@ -12,17 +12,17 @@
 
 //Input System
 #include <OIS/OIS.h>
-#include "InputManager.h"
 
 //Generic Object Support
 #include "OgreObject.h"
-#include "OgreEvent.h"
+#include "OgreEventListener.h"
+
+#include "EventManager.h"
 
 using namespace std;
 using namespace Ogre;
 
-class OgreManager : public WindowEventListener, 
-                    public FrameListener 
+class OgreManager : public WindowEventListener 
 {
 
     public:
@@ -44,21 +44,21 @@ class OgreManager : public WindowEventListener,
 
         void initialiseAllResourceGroups();
 
-        void addEventHandler(OgreEvent* event);
+        void addEventListener(OgreEventListener* event);
 
         //Setup and tear down of input and rendering
         int renderStart();
         void renderStop();
 
         //Object management
-        void createObject(OgreObject* object);
-        void destroyObject( const String& uuid, const OgreObjectType& type );
+        void addObject(OgreObject* object);
+        void removeObject( const String& uuid, const OgreObjectType& type );
 
         //Viewport management
         void setViewport( const String& name );
 
         //OGRE hooks
-        bool frameStarted(const FrameEvent &event);
+        //bool frameStarted(const FrameEvent &event);
         void windowClosed(RenderWindow* rw);
 
     protected:
@@ -70,9 +70,11 @@ class OgreManager : public WindowEventListener,
         RenderWindow* window;
         bool rendering;
 
-        InputManager* input;
+        EventManager* em;
         Ogre::Viewport* viewport;
         Ogre::SceneManager* scene;
+        Ogre::uint16 channel;
+        Ogre::WorkQueue* queue;
 };
 
 
