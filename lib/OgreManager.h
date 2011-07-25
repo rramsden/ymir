@@ -52,6 +52,7 @@ class OgreManager : public WindowEventListener
 
         //Object management
         void addObject(OgreObject* object);
+        void updateObject(OgreObject* object);
         void removeObject( const String& uuid, const OgreObjectType& type );
 
         //Viewport management

@@ -13,7 +13,8 @@ using namespace Ogre;
 /********************** OgreObject Definitions ************************/
 OgreObject::OgreObject( const std::string& uuid ) :
     uuid(uuid),
-    props()
+    props(),
+    actions()
 {
 
 }
@@ -49,7 +50,22 @@ bool OgreObject::hasProperty(const string& name, any* val = NULL){
     return hasProp;
 }
 
-int OgreObject::decodeProps( char* data, int* idx ){
+bool OgreObject::hasAction(const string& name, any* val = NULL){
+    bool hasAction = false;
+    PropList::iterator it = actions.begin();
+    
+    if( (it = actions.find(name)) != actions.end() ){
+        hasAction = true;
+        
+        if( val ){
+            *val = it->second;
+        }
+    }
+
+    return hasAction;
+}
+
+int OgreObject::decodeAddProps( char* data, int* idx ){
     int count = 0;
 
     if( !data || !idx || ei_decode_list_header(data, idx, &count) ){
@@ -63,6 +79,7 @@ int OgreObject::decodeProps( char* data, int* idx ){
         string prop = "";
         Vector3 vec3;
         Vector4 vec4;
+        Radian radian;
 
         //Every prop must be of the form {name:string, prop:varies}
         if( ei_decode_tuple_header(data, idx, &arity) ||
@@ -76,15 +93,19 @@ int OgreObject::decodeProps( char* data, int* idx ){
             props.insert(pair<string, any>(prop, vec3));
         } else if( prop == "direction" && !decodeVector3(data, idx, &vec3) ){
             props.insert(pair<string, any>(prop, vec3)); 
+        } else if( prop == "yaw" && !decodeRadian(data, idx, &radian) ){
+            props.insert(pair<string, any>(prop, radian));
+        } else if( prop == "pitch" && !decodeRadian(data, idx, &radian) ){
+            props.insert(pair<string, any>(prop, radian));
+        } else if( prop == "roll" && !decodeRadian(data, idx, &radian) ){
+            props.insert(pair<string, any>(prop, radian));
         } else if( prop == "rotation" && !decodeVector4(data, idx, &vec4) ){
             props.insert(pair<string, any>(prop, vec4)); 
         } else if( prop == "scale" && !decodeVector3(data, idx, &vec3) ){
             props.insert(pair<string, any>(prop, vec3)); 
         } else if( prop == "isVisible" && !decodeBool(data, idx, &bval) ){
             props.insert(pair<string, any>(prop, bval));
-        } else if( prop == "castShadows" && !decodeBool(data, idx, &bval) ){
-            props.insert(pair<string, any>(prop, vec3));
-        } else if( this->decodeProp(prop, data, idx) ){
+        } else if( this->decodeAddProp(prop, data, idx) ){
             return -EINVAL;
         }    
     }
@@ -97,8 +118,118 @@ int OgreObject::decodeProps( char* data, int* idx ){
     return 0;
 }
 
+int OgreObject::decodeUpdateActions(char* args, int* idx){
+    int count = 0;
+
+    if( !args || !idx || ei_decode_list_header(args, idx, &count) ){
+        return -EINVAL;
+    }   
+
+    //Walk the list of given properties
+    for( int i = 0; i < count; i++ ){
+        int arity = 0;
+        string action = "";
+        Radian radian;
+        Vector3 vec3;
+
+        //Every prop must be of the form {name:string, prop:varies}
+        if( ei_decode_tuple_header(args, idx, &arity) ||
+            (arity != 2) ||
+            decodeString(args, idx, &action) )
+        {
+            return -EINVAL;
+        }
+
+        //Decode common update actions
+        if( action == "move" && !decodeVector3(args, idx, &vec3) ){
+            actions.insert(pair<string,any>(action, vec3));
+        } else if( action == "yaw" && !decodeRadian(args, idx, &radian) ){
+            actions.insert(pair<string,any>(action, radian));
+        } else if( action == "pitch" && !decodeRadian(args, idx, &radian) ){
+            actions.insert(pair<string,any>(action, radian));
+        } else if( action == "roll" && !decodeRadian(args, idx, &radian) ){
+            actions.insert(pair<string,any>(action, radian));
+        }
+        
+        /*else if( action == "rotate" && !decodeVector3(args, idx, &vec3) ){
+            actions.insert(pair<string,any>(action, vec3));
+        }*/
+        
+    }
+
+    //Decode end of list
+    if( ei_decode_list_header(args, idx, &count) || count ){
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+void OgreObject::addCommon( SceneNode* node ){
+    any temp; 
+
+    if( !node ){
+        printf("no node given!!!\n");
+        return;
+    }
+
+    if( hasProperty("position", &temp) ){
+        node->setPosition(any_cast<Vector3>(temp));
+    } 
+
+    if( hasProperty("direction", &temp) ){
+        node->setDirection(any_cast<Vector3>(temp));
+    }
+
+    if( hasProperty("yaw", &temp) ){
+        node->yaw(any_cast<Radian>(temp));
+    }
+
+    if( hasProperty("pitch", &temp) ){
+        node->pitch(any_cast<Radian>(temp));
+    }
+
+    if( hasProperty("roll", &temp) ){
+        node->roll(any_cast<Radian>(temp));
+    }
+
+    if( hasProperty("lookAt", &temp) ){
+        node->lookAt(any_cast<Vector3>(temp), Node::TS_WORLD);
+    }
+}
+
+
+void OgreObject::updateCommon( SceneNode* node ){
+    any temp;
+
+    if( hasAction("move", &temp) ){
+        node->translate( node->getOrientation() * any_cast<Vector3>(temp) );
+    }
+
+    if( hasAction("yaw", &temp) ){
+        
+        node->yaw(any_cast<Radian>(temp));
+    }
+
+    if( hasAction("pitch", &temp) ){
+        node->pitch(any_cast<Radian>(temp));
+    }
+
+    if( hasAction("roll", &temp) ){
+        node->roll(any_cast<Radian>(temp));
+    }
+
+    /*if( hasAction("rotate", &temp) ){
+        Vector3 temp = any_cast<Vector3>(temp);
+
+        node->yaw(Radian(temp.x));
+        node->pitch(Radian(temp.y));
+        node->roll(Radian(temp.z));
+    }*/
+}
+
 /********************** OgreCamera Definitions ************************/
-int OgreCamera::decodeProp( const string& prop, char* data, int* idx ){
+int OgreCamera::decodeAddProp( const string& prop, char* data, int* idx ){
     int rc = 0;
     Vector3 vec3;
     Real real;
@@ -116,15 +247,24 @@ int OgreCamera::decodeProp( const string& prop, char* data, int* idx ){
     return rc;
 }
 
-int OgreCamera::addToScene( SceneManager* scene ){
+int OgreCamera::decodeUpdateAction( const string& action, char* data, int* idx) {
+
+    return 0;
+}
+
+int OgreCamera::add( SceneManager* scene ){
     Camera* camera = NULL; 
+    SceneNode* node = NULL;
     any temp; 
 
-    try {
-        camera = scene->getCamera(uuid); 
-    } catch( ... ){
-        camera = scene->createCamera(uuid);
-    }
+    camera = scene->createCamera(uuid);
+    node = scene->getRootSceneNode()->createChildSceneNode();
+
+    node->attachObject(camera);
+
+    printf("node pointer! %p\n", node);
+
+    addCommon(node);
 
     if( hasProperty("position", &temp) ){
         camera->setPosition(any_cast<Vector3>(temp));
@@ -132,6 +272,18 @@ int OgreCamera::addToScene( SceneManager* scene ){
 
     if( hasProperty("direction", &temp) ){
         camera->setDirection(any_cast<Vector3>(temp));
+    }
+
+    if( hasProperty("yaw", &temp) ){
+        camera->yaw(any_cast<Radian>(temp));
+    }
+
+    if( hasProperty("pitch", &temp) ){
+        camera->pitch(any_cast<Radian>(temp));
+    }
+
+    if( hasProperty("roll", &temp) ){
+        camera->roll(any_cast<Radian>(temp));
     }
 
     if( hasProperty("lookAt", &temp) ){
@@ -149,8 +301,22 @@ int OgreCamera::addToScene( SceneManager* scene ){
     return 0;
 }
 
+int OgreCamera::update( SceneManager* scene ){
+    Camera* camera = NULL;
+
+    try {
+        camera = scene->getCamera(uuid);
+    } catch( ... ){
+        return -EINVAL;
+    }
+
+    updateCommon(camera->getParentSceneNode()); 
+    
+    return 0;
+}
+
 /********************** OgreLight Definitions ************************/
-int OgreLight::decodeProp( const string& prop, char* args, int* idx ){
+int OgreLight::decodeAddProp( const string& prop, char* args, int* idx ){
     int rc = 0;
     string source = "";
 
@@ -172,28 +338,32 @@ int OgreLight::decodeProp( const string& prop, char* args, int* idx ){
     return rc;
 }
 
-int OgreLight::addToScene( SceneManager* scene ){
+
+int OgreLight::decodeUpdateAction( const string& action, char* data, int* idx) {
+
+    return 0;
+}
+
+int OgreLight::add( SceneManager* scene ){
     Light* light = NULL;
+    SceneNode* node = NULL;
     any temp;
 
-    try {
-        light = scene->getLight(uuid);
-    } catch( ... ){
-        light = scene->createLight(uuid);
-    }
+    printf("Huh?\n");
 
-    if( hasProperty("position", &temp) ){
-        light->setPosition(any_cast<Vector3>(temp));
-    }
+    light = scene->createLight(uuid);
+    node = scene->getRootSceneNode()->createChildSceneNode();
 
-    if( hasProperty("direction", &temp) ){
-        light->setDirection(any_cast<Vector3>(temp));
-    }
+    node->attachObject(light);
+   
+    printf("Before addCommon, node = %p\n", light->getParentSceneNode());
+
+    addCommon(light->getParentSceneNode());
+
+    printf("After addCommon\n");
 
     if( hasProperty("source", &temp) ){
         light->setType(any_cast<Light::LightTypes>(temp));
-
-        //<<HERE>> Enforce direction/position reqs based on type?
     }
 
     if( hasProperty("castShadows", &temp) ){
@@ -203,8 +373,23 @@ int OgreLight::addToScene( SceneManager* scene ){
     return 0;
 }
 
+int OgreLight::update( SceneManager* scene ){
+    Light* light = NULL;
+    any temp;
+    
+    try {
+        light = scene->getLight(uuid);
+    } catch( ... ){
+        return -EINVAL;
+    }
+
+    updateCommon(light->getParentSceneNode());
+
+    return 0;
+}
+
 /********************** OgreEntity Definitions ************************/
-int OgreEntity::decodeProp( const string& prop, char* args, int* idx ){
+int OgreEntity::decodeAddProp( const string& prop, char* args, int* idx ){
     int rc = 0;
     string mesh = "";
 
@@ -217,51 +402,49 @@ int OgreEntity::decodeProp( const string& prop, char* args, int* idx ){
     return rc;
 }
 
-int OgreEntity::addToScene( SceneManager* scene ){
+int OgreEntity::decodeUpdateAction( const string& action, char* data, int* idx) {
+
+    return 0;
+}
+
+int OgreEntity::add( SceneManager* scene ){
     Ogre::Entity* entity = NULL;
     SceneNode* node = NULL;
     any temp;
     string mesh = "";
 
-    try {
-        entity = scene->getEntity(uuid);
-        node = entity->getParentSceneNode();
-    } catch (...) {
-
-        //Must have at least have a mesh defined
-        if( !hasProperty("mesh", &temp) ){
-            return -1;
-        } 
-    
-        mesh = any_cast<string>(temp);
-
-        entity = scene->createEntity(uuid, mesh);
-        node = scene->getRootSceneNode()->createChildSceneNode();
-
-        node->attachObject(entity);
-
-        printf("Created enitity %s with mesh: %s\n", uuid.c_str(), mesh.c_str());
+    if( !hasProperty("mesh", &temp) ){
+        return -EINVAL;
     }
+
+    mesh = any_cast<string>(temp);
+
+    entity = scene->createEntity(uuid, mesh);
+    node = scene->getRootSceneNode()->createChildSceneNode();
+    node->attachObject(entity);
+
+    addCommon(node);
+
+    printf("Created enitity %s with mesh: %s\n", uuid.c_str(), mesh.c_str());
 
     if( hasProperty("castShadows", &temp) ){
         entity->setCastShadows(any_cast<bool>(temp));
     }
 
-    if( hasProperty("position", &temp) ){
-        node->setPosition(any_cast<Vector3>(temp));
+    return 0;
+}
+
+int OgreEntity::update( SceneManager* scene ){
+    Ogre::Entity* entity = NULL;
+    any temp;
+    
+    try {
+        entity = scene->getEntity(uuid);
+    } catch (...) {
+        return -EINVAL;
     }
 
-    if( hasProperty("direction", &temp) ){
-        node->setDirection(any_cast<Vector3>(temp));
-    }
-
-    if( hasProperty("scale", &temp) ){
-        node->setScale(any_cast<Vector3>(temp));
-    }
-
-    /*if( hasProperty("lookAt", &temp) ){
-        node->lookAt(any_cast<Vector3>(temp));
-    }*/
+    updateCommon(entity->getParentSceneNode());
 
     return 0;
 }
@@ -308,6 +491,17 @@ int decodeReal( char*data, int* idx, Real* output ){
 
     if( !(rc = ei_decode_double(data, idx, &val)) ){
         *output = Real(val);
+    }
+
+    return rc;
+}
+
+int decodeRadian( char* data, int* idx, Radian* output ){
+    int rc = 0;
+    Real val = Real(0);
+
+    if( !(rc = decodeReal(data, idx, &val)) ){
+        *output = Radian(val);
     }
 
     return rc;

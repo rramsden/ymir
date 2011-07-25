@@ -166,11 +166,67 @@ GEN_CNODE_DEFINE( addObject ){
                 gen_cnode_format(resp, "{error,einval}");
                 break;
         }
-    
-        if( object && !(object->decodeProps(args, &idx)) ){
+   
+        if( object && !(object->decodeAddProps(args, &idx)) ){
             
            //Looks good, tell OgreManager to add the object
            ((OgreManager*)state)->addObject(object);
+
+            gen_cnode_format(resp, "ok");
+        } else {
+            rc = -EINVAL;
+            gen_cnode_format(resp, "{error,einval}");
+        }
+    }
+    
+    return rc;
+}
+
+GEN_CNODE_DEFINE( updateObject ){
+    int rc = 0;
+
+    //Decode each camera object
+    for( int i = 0, idx = 0; i < argc; i++ ){
+        int arity = 0;
+        string uuid = "";
+        OgreObjectType type = OBJECT_INVALID;
+        OgreObject* object = NULL;
+
+        //UUID, type, and prop list are requred
+        if( ei_decode_tuple_header(args, &idx, &arity) || 
+            (arity != 3) || 
+            decodeString(args, &idx, &uuid) ||
+            decodeType(args, &idx, &type) )
+        { 
+            rc = -EINVAL;
+            gen_cnode_format(resp, "{error,einval}");
+            break;
+        }
+   
+        //Create the object based on translated type
+        switch( type ){
+            case OBJECT_CAMERA:
+                object = new OgreCamera(uuid);
+                break;
+
+            case OBJECT_LIGHT:
+                object = new OgreLight(uuid);
+                break;
+
+            case OBJECT_ENTITY:
+                object = new OgreEntity(uuid);
+                break; 
+
+            default:
+                rc = -EINVAL;
+                gen_cnode_format(resp, "{error,einval}");
+                break;
+        }
+    
+        if( object && !(object->decodeUpdateActions(args, &idx)) ){
+            
+           //Looks good, tell OgreManager to add the object
+           ((OgreManager*)state)->updateObject(object);
 
             gen_cnode_format(resp, "ok");
         } else {

@@ -112,7 +112,8 @@ start_link()->
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 init(_Args)->
     Keyboard = dict:new(),
-    Mouse = dict:new(),
+    Mouse = dict:from_list( [{current, {0,0,0}},
+                             {previous, {0,0,0}}] ),
     Map = dict:from_list( [ {quit, {keyboard, 1}}, 
                             {move_forth, {keyboard, 17}},
                             {move_back, {keyboard, 31}},
@@ -139,6 +140,10 @@ init(_Args)->
 merge_camera( "position", {X1, Y1, Z1}, {X2, Y2, Z2} )->
     {X1 + X2, Y1 + Y2, Z1 + Z2};
 
+merge_camera( "yaw", Val1, Val2 ) -> Val1 + Val2;
+merge_camera( "pitch", Val1, Val2 ) -> Val1 + Val2;
+merge_camera( "roll", Val1, Val2 ) -> Val1 + Val2;
+
 merge_camera( _Key, _Val1, Val2 ) -> Val2.
 
 update_camera( UUID, Updates ) when is_list(UUID), 
@@ -156,30 +161,44 @@ update_camera( UUID, Updates ) when is_list(UUID),
 
     mnesia:transaction(F).
                                             
-offset(17, true, {DX, DY, DZ}) -> {DX, DY, DZ - 10};
-offset(31, true, {DX, DY, DZ}) -> {DX, DY, DZ + 10};
-offset(30, true, {DX, DY, DZ}) -> {DX - 10, DY, DZ};
-offset(32, true, {DX, DY, DZ}) -> {DX + 10, DY, DZ};
-offset(_Key, _Val, Offset) -> Offset.
+mouse_rotate(2, true, {Dx, Dy, Dz}) -> {Dx * -0.02, Dy * -0.02, Dz};
+mouse_rotate(_Key, _Val, Offset) -> Offset.
+
+position_offset(17, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
+position_offset(31, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
+position_offset(30, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
+position_offset(32, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
+position_offset(_Key, _Val, Offset) -> Offset.
 
 position(State) when is_record(State, inputState) ->
-    Default = {0.0, 0.0, 0.0},
-    F = fun( Key, Val, In ) -> offset(Key, Val, In) end,
-    Diff = dict:fold(F, Default, State#inputState.keyboard),
+    Default = {0.0, 0.0, 0.0},   
+    F = fun( Key, Val, In ) -> position_offset(Key, Val, In) end,
+    Offset = dict:fold(F, Default, State#inputState.keyboard),
     if
-        Default /= Diff ->
-            [{"position", Diff}];
+        Offset /= Default ->
+            [{"move", Offset}];  
 
         true ->
             []
     end.
 
-pitch( State ) when is_record( State, inputState ) -> [].
-
-yaw( State ) when is_record( State, inputState )-> [].
-
 rotation(State) when is_record(State, inputState) ->
-    pitch(State) ++ yaw(State).
+    F = fun( Key, Val, In ) -> mouse_rotate(Key, Val, In) end,
+
+    {Cx, Cy, Cz} = dict:fetch(current, State#inputState.mouse),
+    {Px, Py, Pz} = dict:fetch(previous, State#inputState.mouse),
+    Diff = {Cx-Px, Cy-Py, 0},
+
+    Offset = dict:fold(F, Diff, State#inputState.mouse),
+    if
+        Offset /= Diff ->
+            {Yaw, Pitch, Roll} = Offset,
+            Actions = [{"yaw", Yaw}, {"pitch", Pitch}, {"roll", Roll}],
+            [ {Name, Val} || {Name, Val} <- Actions, Val /= 0.0 ];
+
+        true ->
+            []
+    end.
 
 move(State) when is_record(State, inputState) ->
     
@@ -189,18 +208,16 @@ move(State) when is_record(State, inputState) ->
 
             Updates ->
 
-                {atomic, Camera}  = update_camera( "Camera", Updates ),
-
-                Updated = [ {Key, Val} || {Key, Val} <- dict:to_list(Camera#object.props),
-                                          proplists:is_defined(Key, Updates) ],
+                %io:format("Updates: ~p~n", [Updates]),
+                %%{atomic, Camera}  = update_camera( "Camera", Updates ),
 
                 %%Tell OgreManager about the updated object
                 ok = gen_server:call(ogre_manager, { worker, 
                                                      'OgreManager', 
-                                                     addObject,
+                                                     updateObject,
                                                      [{"Camera", 
                                                        "camera",
-                                                       Updated
+                                                       Updates
                                                     }]} )
         end.
 
@@ -218,12 +235,17 @@ handle_event(frameStarted, State) when is_record(State, inputState) ->
 
     move(State),
 
+    Current = dict:fetch( current, State#inputState.mouse ),
+    NewState = State#inputState{mouse = dict:store( previous, 
+                                                    Current, 
+                                                    State#inputState.mouse ) },
+
     case dict:find(1, Keyboard) of
         {ok, true} -> 
             shutdown(),
-            {ok, State};
+            {ok, NewState};
         _Default ->
-            {ok, State} 
+            {ok, NewState} 
     end;
 
 %%Key/Mouse pressed and release event handlers, simply update stored state
@@ -241,14 +263,14 @@ handle_event({keyReleased, Key}, State) when is_record(State, inputState) ->
     {ok, #inputState{ keyboard = dict:store(Key, false, Keyboard), 
                       mouse = Mouse }};
 
-handle_event({mousePressed, Key}, State) when is_record(State, inputState) ->
+handle_event({mousePressed,{Key, _Pos}}, State) when is_record(State, inputState) ->
     Keyboard = State#inputState.keyboard,
     Mouse = State#inputState.mouse,
 
     {ok, #inputState{ keyboard = Keyboard, 
                       mouse = dict:store(Key, true, Mouse) }};
 
-handle_event({mouseReleased, Key}, State) when is_record(State, inputState) ->
+handle_event({mouseReleased, {Key, _Pos}}, State) when is_record(State, inputState) ->
     Keyboard = State#inputState.keyboard,
     Mouse = State#inputState.mouse,
 
@@ -260,114 +282,9 @@ handle_event({mouseMoved, Pos}, State) when is_record(State, inputState) ->
     Mouse = State#inputState.mouse,
     {_ID, [{Ax,_Rx},{Ay, _Ry}, {Az, _Rz}]} = Pos,
 
-    %%If current is already defined, write its value to previous.
-    %%Otherwise, assume the current mouse position as the previous value.
-    %if dict:is_key(current, State#inputState.mouse) ->
-    %     true ->
-    %        Current = dict:fetch( current, State#inputState.mouse ),
-    %        Mouse = dict:store( previous, Current, State#inputState.mouse );
-
-    %     false ->
-    %        Previous = {Ax, Ay, Az},             
-    %        Mouse = dict:store(previous, Previous, State#inputState.mouse)
-    %end,
-
     %%Update current mouse position
     {ok, #inputState{ keyboard = Keyboard,
                       mouse = dict:store(current, {Ax, Ay, Az}, Mouse) }};
-%
-%handle_event({keyPressed, 1}, State) ->
-%    ok = gen_server:call(ogre_manager, ({worker, 'OgreManager', renderStop, []})),
-%    ok = call({'OgreManager', stop, []}),
-%    {ok, State};
-%
-%handle_event({keyPressed, 30}, State) -> 
-%
-%
-%    {atomic, Camera} = update_camera( "Camera", {-10, 0, 0} ),
-%
-%    io:format("Got ~p~n", [Camera]),
-%
-%    Pos = dict:fetch("position", Camera#object.props),
-%    io:format("Pos = ~p~n", [Pos]),
-%
-%    %%Tell OgreManager about the updated object
-%    ok = gen_server:call(ogre_manager, { worker, 
-%                                        'OgreManager', 
-%                                        addObject,
-%                                        [{"Camera", 
-%                                          "camera",
-%                                          [{"position", Pos}]
-%                                          }
-%                                        ]
-%                                       }),
-%    {ok, State};
-%
-%handle_event({keyPressed, 32}, State) -> 
-%
-%
-%    {atomic, Camera} = update_camera( "Camera", {10, 0, 0} ),
-%
-%    io:format("Got ~p~n", [Camera]),
-%
-%    Pos = dict:fetch("position", Camera#object.props),
-%    io:format("Pos = ~p~n", [Pos]),
-%
-%    %%Tell OgreManager about the updated object
-%    ok = gen_server:call(ogre_manager, { worker, 
-%                                        'OgreManager', 
-%                                        addObject,
-%                                        [{"Camera", 
-%                                          "camera",
-%                                          [{"position", Pos}]
-%                                          }
-%                                        ]
-%                                       }),
-%    {ok, State};
-%
-%handle_event({keyPressed, 17}, State) -> 
-%
-%
-%    {atomic, Camera} = update_camera( "Camera", {0, 0, -10} ),
-%
-%    io:format("Got ~p~n", [Camera]),
-%
-%    Pos = dict:fetch("position", Camera#object.props),
-%    io:format("Pos = ~p~n", [Pos]),
-%
-%    %%Tell OgreManager about the updated object
-%    ok = gen_server:call(ogre_manager, { worker, 
-%                                        'OgreManager', 
-%                                        addObject,
-%                                        [{"Camera", 
-%                                          "camera",
-%                                          [{"position", Pos}]
-%                                          }
-%                                        ]
-%                                       }),
-%    {ok, State};
-%
-%handle_event({keyPressed, 31}, State) -> 
-%
-%
-%    {atomic, Camera} = update_camera( "Camera", {0, 0, 10} ),
-%
-%    io:format("Got ~p~n", [Camera]),
-%
-%    Pos = dict:fetch("position", Camera#object.props),
-%    io:format("Pos = ~p~n", [Pos]),
-%
-%    %%Tell OgreManager about the updated object
-%    ok = gen_server:call(ogre_manager, { worker, 
-%                                        'OgreManager', 
-%                                        addObject,
-%                                        [{"Camera", 
-%                                          "camera",
-%                                          [{"position", Pos}]
-%                                          }
-%                                        ]
-%                                       }),
-%    {ok, State};
 
 handle_event(Event, State) ->
     io:format("**** EVENT ***** ~p~n", [Event]),

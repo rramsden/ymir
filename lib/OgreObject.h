@@ -30,6 +30,7 @@ int decodeBool( char* data, int* idx, int* output );
 int decodeType( char* data, int* idx, OgreObjectType* output );
 int decodeString( char* data, int* idx, std::string* output );
 int decodeReal( char*data, int* idx, Ogre::Real* output );
+int decodeRadian( char* data, int* idx, Ogre::Radian* output );
 int decodeVector3( char* data, int* idx, Ogre::Vector3* output );
 int decodeVector4( char* data, int* idx, Ogre::Vector4* output );
 
@@ -40,16 +41,27 @@ class OgreObject {
         ~OgreObject();
 
         void setProperty(const std::string& name, boost::any& val);
-        bool hasProperty(const std::string& name, boost::any* val);
 
-        int decodeProps( char* args, int* idx );
-        
-        virtual int decodeProp( const std::string& prop, char* args, int* idx ) = 0;
-        virtual int addToScene( Ogre::SceneManager* scene ) = 0;
+        bool hasProperty(const std::string& name, boost::any* val);
+        bool hasAction(const std::string& name, boost::any* val);
+
+        int decodeAddProps( char* args, int* idx );
+        int decodeUpdateActions( char* args, int* idx ); 
+
+        virtual int decodeAddProp( const std::string& prop, char* args, int* idx ) = 0;
+        virtual int decodeUpdateAction( const std::string& prop, char* args, int* idx) = 0;
+
+        virtual int update( Ogre::SceneManager* scene ) = 0;
+        virtual int add( Ogre::SceneManager* scene ) = 0;
 
     protected:
+
+        void addCommon( Ogre::SceneNode* parent );
+        void updateCommon( Ogre::SceneNode* parent );
+
         std::string uuid;
         PropList props;
+        PropList actions;
 };
 
 class OgreCamera : public OgreObject {
@@ -58,8 +70,11 @@ class OgreCamera : public OgreObject {
         OgreCamera( const std::string& uuid ) : OgreObject(uuid) {};
         ~OgreCamera() {};
 
-        int decodeProp( const std::string& prop, char* args, int* idx );
-        int addToScene( Ogre::SceneManager* scene );
+        int decodeAddProp( const std::string& prop, char* args, int* idx );
+        int decodeUpdateAction( const std::string& action, char* args, int* idx );
+
+        int add( Ogre::SceneManager* scene );
+        int update( Ogre::SceneManager* scene );
 };
 
 class OgreLight : public OgreObject {
@@ -68,8 +83,11 @@ class OgreLight : public OgreObject {
         OgreLight( const std::string& uuid ) : OgreObject(uuid) {};
         ~OgreLight() {};
 
-        int decodeProp( const std::string& prop, char* args, int* idx );
-        int addToScene( Ogre::SceneManager* scene );
+        int decodeAddProp( const std::string& prop, char* args, int* idx );
+        int decodeUpdateAction( const std::string& action, char* args, int* idx );
+
+        int add( Ogre::SceneManager* scene );
+        int update( Ogre::SceneManager* scene );
 };
 
 class OgreEntity : public OgreObject {
@@ -77,8 +95,11 @@ class OgreEntity : public OgreObject {
         OgreEntity( const std:: string& uuid ) : OgreObject(uuid) {};
         ~OgreEntity() {};
 
-        int decodeProp( const std::string& prop, char* args, int* idx );
-        int addToScene( Ogre::SceneManager* scene );
+        int decodeAddProp( const std::string& prop, char* args, int* idx );
+        int decodeUpdateAction( const std::string& action, char* args, int* idx );
+
+        int add( Ogre::SceneManager* scene );
+        int update( Ogre::SceneManager* scene );
 };
 
 #endif

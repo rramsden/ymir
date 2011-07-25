@@ -168,13 +168,15 @@ void OgreManager::initialiseAllResourceGroups() {
 void OgreManager::addObject( OgreObject* object ){
 
     if( !scene ){
-        logCritical("No scene active!  Unable to add a camera node!"); 
+        logCritical("No scene active!  Unable to add object!"); 
         return;
     }
 
-    object->addToScene(scene);
+    printf("Calling OBJECT ADD!\n");
 
-    delete object;
+    object->add(scene);
+
+    //delete object;
 
     /*if( rendering ){ //If rendering, add camera creation to work queues. 
 
@@ -184,6 +186,18 @@ void OgreManager::addObject( OgreObject* object ){
 
         object->addToScene(scene);
    }*/
+}
+
+void OgreManager::updateObject( OgreObject* object ){
+
+    if( !scene ){
+        logCritical("No scene active!  Unable to add object!"); 
+        return;
+    }
+
+    object->update(scene);
+
+    delete object;
 }
 
 void OgreManager::removeObject( const String& uuid, const OgreObjectType& type ){
