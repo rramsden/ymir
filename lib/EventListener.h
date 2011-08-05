@@ -2,6 +2,7 @@
 #define EVENTLISTENER_H
 
 #include <OIS.h>
+#include <MyGUI.h>
 #include <OgreFrameListener.h>
 #include <OgreWindowEventUtilities.h>
 
@@ -22,6 +23,9 @@ class EventListener : public OIS::KeyListener,
         virtual bool frameStarted( const Ogre::FrameEvent& e ) { return true; }
         virtual bool frameEnded( const Ogre::FrameEvent& e ) { return true; }
         virtual bool frameRenderingQueued( const Ogre::FrameEvent &e ) { return true; } 
+
+        virtual void guiMousePressed(MyGUI::Widget*, int, int, MyGUI::MouseButton){}
+        virtual void guiMouseReleased(MyGUI::Widget*, int, int, MyGUI::MouseButton){}
 
         virtual void windowMoved( Ogre::RenderWindow *window ) {}
         virtual void windowResized( Ogre::RenderWindow *window ){}

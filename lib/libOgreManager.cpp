@@ -1,8 +1,12 @@
 #include <stdio.h>
 
 #include "gen_cnode.h"
+
 #include "OgreManager.h"
+
 #include "OgreObject.h"
+#include "MyGUIObject.h"
+
 #include "OgreEventListener.h"
 
 using namespace std;
@@ -10,6 +14,7 @@ using namespace Ogre;
 
 using boost::any_cast;
 using namespace boost;
+using namespace Ymir;
 
 //References to singleton OM..used by gen_cnode and lua interaces
 static OgreManager* om = NULL;
@@ -125,16 +130,30 @@ GEN_CNODE_DEFINE( initialiseAllResourceGroups ){
     return 0;
 }
 
+GEN_CNODE_DEFINE( initialiseMyGUI ){
+    int idx = 0;
+    string config = "";
+
+    if( (argc != 1) || decodeString(args, &idx, &config) ){
+        gen_cnode_format(resp, "{error, einval}");
+        return -EINVAL;
+    }
+
+    ((OgreManager*)state)->initialiseMyGUI(config);
+
+    gen_cnode_format(resp, "ok");
+    return 0;
+}
+
 //Expects a list of {uuid:string, type:string, [{prop:string, value:varies},...]}
 GEN_CNODE_DEFINE( addObject ){
     int rc = 0;
 
-    //Decode each camera object
-    for( int i = 0, idx = 0; i < argc; i++ ){
+    //Decode each object
+    for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
         int arity = 0;
         string uuid = "";
-        OgreObjectType type = OBJECT_INVALID;
-        OgreObject* object = NULL;
+        ObjectType type = OBJECT_INVALID;
 
         //UUID, type, and prop list are requred
         if( ei_decode_tuple_header(args, &idx, &arity) || 
@@ -148,49 +167,56 @@ GEN_CNODE_DEFINE( addObject ){
         }
    
         //Create the object based on translated type
-        switch( type ){
-            case OBJECT_CAMERA:
-                object = new OgreCamera(uuid);
-                break;
+        try {
+            switch( type ){
+                case OBJECT_CAMERA:
+                    om->add(new Ymir::Camera(uuid, args, &idx));
+                    break;
 
-            case OBJECT_LIGHT:
-                object = new OgreLight(uuid);
-                break;
+                case OBJECT_LIGHT:
+                    om->add(new Ymir::Light(uuid, args, &idx));
+                    break;
 
-            case OBJECT_ENTITY:
-                object = new OgreEntity(uuid);
-                break; 
+                case OBJECT_ENTITY:
+                    om->add(new Ymir::Entity(uuid, args, &idx));
+                    break;
 
-            default:
-                rc = -EINVAL;
-                gen_cnode_format(resp, "{error,einval}");
-                break;
-        }
-   
-        if( object && !(object->decodeAddProps(args, &idx)) ){
-            
-           //Looks good, tell OgreManager to add the object
-           ((OgreManager*)state)->addObject(object);
+                case OBJECT_WINDOW:
+                    om->add(new Ymir::Window(uuid, args, &idx));
+                    break;
+               
+                case OBJECT_BUTTON:
+                    om->add(new Ymir::Button(uuid, args, &idx));
+                    break;
 
-            gen_cnode_format(resp, "ok");
-        } else {
+                default:
+                    rc = -EINVAL;
+                    gen_cnode_format(resp, "{error, bad_type}");
+                    break;
+            }
+        } 
+        
+        catch( ... ){
             rc = -EINVAL;
-            gen_cnode_format(resp, "{error,einval}");
+            gen_cnode_format(resp, "{error, einval}");
         }
     }
-    
+
+    if( !rc ){
+        gen_cnode_format(resp, "ok");
+    }
+
     return rc;
 }
 
 GEN_CNODE_DEFINE( updateObject ){
     int rc = 0;
 
-    //Decode each camera object
-    for( int i = 0, idx = 0; i < argc; i++ ){
+    //Decode each update object
+    for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
         int arity = 0;
         string uuid = "";
-        OgreObjectType type = OBJECT_INVALID;
-        OgreObject* object = NULL;
+        ObjectType type = OBJECT_INVALID;
 
         //UUID, type, and prop list are requred
         if( ei_decode_tuple_header(args, &idx, &arity) || 
@@ -202,50 +228,59 @@ GEN_CNODE_DEFINE( updateObject ){
             gen_cnode_format(resp, "{error,einval}");
             break;
         }
-   
-        //Create the object based on translated type
-        switch( type ){
-            case OBJECT_CAMERA:
-                object = new OgreCamera(uuid);
-                break;
+  
+        try{
 
-            case OBJECT_LIGHT:
-                object = new OgreLight(uuid);
-                break;
+            //Create the object based on translated type
+            switch( type ){
+                case OBJECT_CAMERA:
+                    om->update(new Ymir::Camera(uuid, args, &idx));
+                    break;
 
-            case OBJECT_ENTITY:
-                object = new OgreEntity(uuid);
-                break; 
+                case OBJECT_LIGHT:
+                    om->update(new Ymir::Light(uuid, args, &idx));
+                    break;
 
-            default:
-                rc = -EINVAL;
-                gen_cnode_format(resp, "{error,einval}");
-                break;
+                case OBJECT_ENTITY:
+                    om->update(new Ymir::Entity(uuid, args, &idx)); 
+                    break; 
+
+                case OBJECT_WINDOW:
+                    om->update(new Ymir::Window(uuid, args, &idx));
+                    break;
+        
+                case OBJECT_BUTTON:
+                    om->update(new Ymir::Button(uuid, args, &idx));
+                    break;
+
+                default:
+                    rc = -EINVAL;
+                    gen_cnode_format(resp, "{error, bad_type}");
+                    break;
+            }
         }
-    
-        if( object && !(object->decodeUpdateActions(args, &idx)) ){
-            
-           //Looks good, tell OgreManager to add the object
-           ((OgreManager*)state)->updateObject(object);
 
-            gen_cnode_format(resp, "ok");
-        } else {
+        catch( ... ){
             rc = -EINVAL;
-            gen_cnode_format(resp, "{error,einval}");
         }
     }
-    
+   
+    if( !rc ){
+       gen_cnode_format(resp, "ok"); 
+       gen_cnode_format(resp, "{error,einval}");
+    }
+
     return rc;
 }
 
 //Expects a list of {uuid:string, type:string}
 //and calls the appropriate scene removal function
-GEN_CNODE_DEFINE( removeObject ){
+/*GEN_CNODE_DEFINE( removeObject ){
     int rc = 0;
    
     for( int i = 0, idx = 0; i < argc; i++ ){
         int arity = 0;
-        OgreObjectType type = OBJECT_INVALID;
+        ObjectType type = OBJECT_INVALID;
         string uuid = "";
     
         if( ei_decode_tuple_header(args, &idx, &arity) ||
@@ -261,7 +296,7 @@ GEN_CNODE_DEFINE( removeObject ){
     } 
 
     return rc;
-}
+}*/
 
 GEN_CNODE_DEFINE( setViewport ){
     int rc = 0, idx = 0;

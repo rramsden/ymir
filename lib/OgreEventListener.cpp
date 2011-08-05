@@ -85,6 +85,36 @@ bool OgreEventListener::frameEnded( const FrameEvent& evt ){
     return true;
 }
 
+void OgreEventListener::guiMousePressed(MyGUI::Widget* widget,
+                                        int left, int right,
+                                        MyGUI::MouseButton id)
+{
+    ei_x_buff event = {0};
+
+    ei_x_new(&event);
+
+    gen_cnode_format(&event, "{~s, ~i}", widget->getName().c_str(), (int)id.toValue());
+
+    gen_cnode_notify("guiMousePressed", &event);
+
+    ei_x_free(&event); 
+}
+
+void OgreEventListener::guiMouseReleased(MyGUI::Widget* widget,
+                                         int left, int right,
+                                         MyGUI::MouseButton id)
+{
+    ei_x_buff event = {0};
+
+    ei_x_new(&event);
+
+    gen_cnode_format(&event, "{~s, ~i}", widget->getName().c_str(), (int)id.toValue());
+
+    gen_cnode_notify("guiMouseReleased", &event);
+
+    ei_x_free(&event); 
+}
+
 //Exported utility functions
 int OgreEventListener::encodeMouseEvent( MouseButtonID id,
                                  const MouseEvent& event, 

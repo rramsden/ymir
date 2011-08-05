@@ -4,6 +4,7 @@ EventManager *EventManager::mEventManager;
  
 EventManager::EventManager( void ) :
     rendering( true ),
+    gui(NULL),
     mMouse( 0 ),
     mKeyboard( 0 ),
     mInputSystem( 0 ),
@@ -335,7 +336,7 @@ void EventManager::setWindowExtents( int width, int height ) {
     mouseState.width  = width;
     mouseState.height = height;
 }
- 
+
 OIS::Mouse* EventManager::getMouse( void ) {
     return mMouse;
 }
@@ -390,9 +391,33 @@ bool EventManager::frameEnded( const Ogre::FrameEvent &e ){
     return rendering;
 }
 
+void EventManager::monitor(MyGUI::Widget* widget){
+
+    widget->eventMouseButtonPressed += MyGUI::newDelegate(this, &EventManager::guiMousePressed);
+    widget->eventMouseButtonReleased += MyGUI::newDelegate(this, &EventManager::guiMouseReleased);
+    /*widget->eventMouseButtonClick += (em, &EventManager::mouseClicked);
+    widget->eventMouseButtonDoubleClick += (em, &EventManager::mouseDoubleClicked);
+
+    //Sense all support events on this object
+    widget->eventMouseLostFocus += (em, &EventManager::mouseLostFocus);
+    widget->eventMouseSetFocus += (em, &EventManager::mouseSetFocus);
+    widget->eventMouseMove += (em, &EventManager::mouseMove);
+    widget->eventMouseWheel += (em, &EventManager::mouseWheel);
+
+
+
+    widget->eventKeyButtonPressed += (em, &EventManager::keyPressed);
+    widget->eventKeyButtonReleased += (em, &EventManager::keyReleased);
+    */
+}
+
 bool EventManager::keyPressed( const OIS::KeyEvent &e ){
     itEventListener = mEventListeners.begin();
     itEventListenerEnd = mEventListeners.end();
+
+    if( MyGUI::InputManager::getInstancePtr() ){
+        MyGUI::InputManager::getInstancePtr()->injectKeyPress( MyGUI::KeyCode::Enum(e.key), e.text );
+    }
 
     for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
         if(!itEventListener->second->keyPressed( e ))
@@ -406,6 +431,10 @@ bool EventManager::keyReleased( const OIS::KeyEvent &e ){
     itEventListener = mEventListeners.begin();
     itEventListenerEnd = mEventListeners.end();
 
+    if( MyGUI::InputManager::getInstancePtr() ){
+        MyGUI::InputManager::getInstancePtr()->injectKeyRelease(MyGUI::KeyCode::Enum(e.key));
+    }
+
     for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
         if(!itEventListener->second->keyReleased( e ))
             break;
@@ -417,6 +446,10 @@ bool EventManager::keyReleased( const OIS::KeyEvent &e ){
 bool EventManager::mouseMoved( const OIS::MouseEvent &e ){
     itEventListener = mEventListeners.begin();
     itEventListenerEnd = mEventListeners.end();
+
+    if( MyGUI::InputManager::getInstancePtr() ){
+        MyGUI::InputManager::getInstancePtr()->injectMouseMove(e.state.X.abs, e.state.Y.abs, e.state.Z.abs);
+    }
 
     for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
         if(!itEventListener->second->mouseMoved( e ))
@@ -430,6 +463,12 @@ bool EventManager::mousePressed( const OIS::MouseEvent &e, OIS::MouseButtonID id
     itEventListener = mEventListeners.begin();
     itEventListenerEnd = mEventListeners.end();
 
+    if( MyGUI::InputManager::getInstancePtr() ){
+        MyGUI::InputManager::getInstancePtr()->injectMousePress( e.state.X.abs, 
+                               e.state.Y.abs, 
+                               MyGUI::MouseButton::Enum(id) ); 
+    }
+
     for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
         if(!itEventListener->second->mousePressed( e, id ))
             break;
@@ -442,6 +481,12 @@ bool EventManager::mouseReleased( const OIS::MouseEvent &e, OIS::MouseButtonID i
     itEventListener = mEventListeners.begin();
     itEventListenerEnd = mEventListeners.end();
 
+    if( MyGUI::InputManager::getInstancePtr() ){
+        MyGUI::InputManager::getInstancePtr()->injectMouseRelease( e.state.X.abs, 
+                                                          e.state.Y.abs, 
+                                                          MyGUI::MouseButton::Enum(id) );
+    }
+
     for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
         if(!itEventListener->second->mouseReleased( e, id ))
             break;
@@ -449,6 +494,31 @@ bool EventManager::mouseReleased( const OIS::MouseEvent &e, OIS::MouseButtonID i
  
     return true;
 }
+
+void EventManager::guiMousePressed(MyGUI::Widget* widget,
+                                   int left, int right,
+                                   MyGUI::MouseButton id)
+{
+    itEventListener = mEventListeners.begin();
+    itEventListenerEnd = mEventListeners.end();
+
+    for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
+        itEventListener->second->guiMousePressed(widget, left, right, id);
+    }
+}
+
+void EventManager::guiMouseReleased(MyGUI::Widget* widget,
+                                    int left, int right,
+                                    MyGUI::MouseButton id)
+{
+    itEventListener = mEventListeners.begin();
+    itEventListenerEnd = mEventListeners.end();
+
+    for(; itEventListener != itEventListenerEnd; ++itEventListener ) {
+        itEventListener->second->guiMouseReleased(widget, left, right, id);
+    }
+}
+
 
 /*bool EventManager::keyPressed( const OIS::KeyEvent &e ) {
     itKeyListener    = mKeyListeners.begin();

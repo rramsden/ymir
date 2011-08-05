@@ -10,7 +10,7 @@ default: all
 all: $(BEAM_TARGETS) ;
 
 %.beam: %.erl
-	erlc -W $<
+	erlc -W -pa . $<
 
 clean: 
 	rm -f $(BEAM_TARGETS)

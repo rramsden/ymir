@@ -1,8 +1,8 @@
 #ifndef EventManager_H
 #define EventManager_H
  
-
 #include <OISInputManager.h>
+#include <MyGUI.h>
 #include <OgreRenderWindow.h>
 
 #include "EventListener.h"
@@ -16,9 +16,10 @@ public:
     void capture( void );
     void setRendering( bool rendering );
 
-
     bool frameStarted( const Ogre::FrameEvent &e );
     bool frameEnded( const Ogre::FrameEvent &e );
+
+    void monitor(MyGUI::Widget* widget);
 
     void addEventListener( EventListener* eventListener, const std::string& instanceName );
     /*void addKeyListener( OIS::KeyListener *keyListener, const std::string& instanceName );
@@ -45,7 +46,7 @@ public:
     void removeAllFrameListeners( void );*/
 
     void setWindowExtents( int width, int height );
- 
+
     OIS::Mouse*    getMouse( void );
     OIS::Keyboard* getKeyboard( void );
     /*OIS::JoyStick* getJoystick( unsigned int index );
@@ -64,6 +65,14 @@ private:
     bool mouseMoved( const OIS::MouseEvent &e );
     bool mousePressed( const OIS::MouseEvent &e, OIS::MouseButtonID id );
     bool mouseReleased( const OIS::MouseEvent &e, OIS::MouseButtonID id );
+    
+    void guiMousePressed(MyGUI::Widget* widget,
+                         int left, int right,
+                         MyGUI::MouseButton id);
+
+    void guiMouseReleased(MyGUI::Widget* widget,
+                          int left, int right,
+                          MyGUI::MouseButton id);
 
     void windowMoved( Ogre::RenderWindow *window );
     void windowResized( Ogre::RenderWindow *window );
@@ -77,6 +86,8 @@ private:
     bool buttonPressed( const OIS::JoyStickEvent &e, int button );
     bool buttonReleased( const OIS::JoyStickEvent &e, int button );*/
     bool rendering;
+
+    MyGUI::InputManager* gui;
 
     OIS::Mouse        *mMouse;
     OIS::Keyboard     *mKeyboard;

@@ -22,6 +22,14 @@ class OgreEventListener : public EventListener {
         bool frameStarted( const Ogre::FrameEvent& e );
         bool frameEnded( const Ogre::FrameEvent& e );
 
+        void guiMousePressed(MyGUI::Widget* widget,
+                             int left, int right,
+                             MyGUI::MouseButton id);
+
+        void guiMouseReleased(MyGUI::Widget* widget,
+                              int left, int right,
+                              MyGUI::MouseButton id);
+
         void windowClosed( Ogre::RenderWindow* window );
 };
 
