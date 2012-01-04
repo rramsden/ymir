@@ -30,6 +30,8 @@ class OgreEventListener : public EventListener {
                               int left, int right,
                               MyGUI::MouseButton id);
 
+        void guiMouseButtonClick(MyGUI::Widget* widget);
+
         void windowClosed( Ogre::RenderWindow* window );
 };
 

@@ -100,6 +100,21 @@ void OgreEventListener::guiMousePressed(MyGUI::Widget* widget,
     ei_x_free(&event); 
 }
 
+void OgreEventListener::guiMouseButtonClick(MyGUI::Widget* widget)
+{
+    ei_x_buff event = {0};
+
+    ei_x_new(&event);
+
+    gen_cnode_format(&event, "~s", widget->getName().c_str());
+
+    gen_cnode_notify("guiMouseButtonClick", &event);
+
+    ei_x_free(&event); 
+}
+
+
+
 void OgreEventListener::guiMouseReleased(MyGUI::Widget* widget,
                                          int left, int right,
                                          MyGUI::MouseButton id)

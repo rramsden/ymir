@@ -5,63 +5,97 @@
 
 //MyGUI
 #include <MyGUI.h>
-#include <MyGUI_Types.h>
 
-#include "YmirObject.h"
+#include "Object.h"
 
 namespace Ymir {
 
-    int decodeIntCoord( const char* data, int* idx, MyGUI::IntCoord* output );
-    int decodeIntSize( const char* data, int* idx, MyGUI::IntSize* output );
-    int decodeUString( const char* data, int* idx, MyGUI::UString* output );
-    int decodeAlign( const char* data, int* idx, MyGUI::Align* output );
 
-    template<typename T>
-    class MyGUIObject : public YmirObject {
+    class MyGUIObject : public Ymir::Object {
        
         public:
             MyGUIObject( const std::string& uuid,
-                         const char* args, 
-                         int* idx );
+                         Ymir::Object::Type type ) : Ymir::Object(uuid, type) {}
+            
             ~MyGUIObject() {};
-    
-            int decodeProps( const char* args, int* idx );
-    
-            virtual int decodeProp( const std::string& prop, const char* args, int* idx ) = 0;
-    
-            T* add( MyGUI::Gui* gui );
-            T* update( MyGUI::Gui* gui );
+   
+            void create( Ymir::PropList& props );
+            void update( Ymir::PropList& actions );
+            void destroy();
+
+            static int decodeIntCoord( const char* data, int* idx, MyGUI::IntCoord* output );
+            static int decodeIntSize( const char* data, int* idx, MyGUI::IntSize* output );
+            static int decodeUString( const char* data, int* idx, MyGUI::UString* output );
+            static int decodeAlign( const char* data, int* idx, MyGUI::Align* output );
 
         protected:
-            virtual int set( T* object ) = 0;
+            static int decodeProperty( const std::string& prop, 
+                                       const char* args, 
+                                       int* idx,
+                                       boost::any* output );
+
+            virtual MyGUI::Widget* create( std::string& skin, 
+                                           MyGUI::IntCoord& coord, 
+                                           MyGUI::Align& align,
+                                           std::string& layer,
+                                           std::string& name,
+                                           MyGUI::Gui* gui ) = 0;
+            
+            void setWidget( MyGUI::Widget* widget, Ymir::PropList& props );
+            virtual void set( MyGUI::Widget* widget, Ymir::PropList& props ) = 0;
     };
     
-    class Window : public MyGUIObject<MyGUI::Window> {
+    class Window : public MyGUIObject {
     
         public:
-            Window( const std::string& uuid,
-                    const char* args,
-                    int* idx ) : MyGUIObject<MyGUI::Window>(uuid, args, idx) {};
-            ~Window(){};
+            Window( const std::string& uuid ) : Ymir::MyGUIObject(uuid, Ymir::Object::Window) {}
+            ~Window(){}
 
-            int decodeProp( const std::string& prop, const char* args, int* idx );
-   
+            static int decodePropList( const char* args, 
+                                       int* idx,
+                                       Ymir::PropList* output );
+
         protected:
-            int set( MyGUI::Window* window );
+           static int decodeProperty( const std::string& prop, 
+                                      const char* data, 
+                                      int* idx,
+                                      boost::any* output );
+
+            MyGUI::Widget* create( std::string& skin, 
+                                   MyGUI::IntCoord& coord, 
+                                   MyGUI::Align& align,
+                                   std::string& layer,
+                                   std::string& name,
+                                   MyGUI::Gui* gui );
+
+            void set( MyGUI::Widget* widget, Ymir::PropList& props );
     };
  
-    class Button : public MyGUIObject<MyGUI::Button> {
+    class Button : public Ymir::MyGUIObject {
 
         public:
-            Button( const std::string& uuid,
-                    const char* args, 
-                    int* idx ) : MyGUIObject<MyGUI::Button>(uuid, args, idx) {};
-            ~Button(){};
+            Button( const std::string& uuid ) : Ymir::MyGUIObject(uuid, Ymir::Object::Button) {}
+            ~Button(){}
 
-            int decodeProp( const std::string& prop, const char* args, int* idx );
-            
+            static int decodePropList( const char* args, 
+                                       int* idx,
+                                       Ymir::PropList* output );
+
         protected:
-           int set( MyGUI::Button* button );
+
+            static int decodeProperty( const std::string& prop, 
+                                       const char* args, 
+                                       int* idx, 
+                                       boost::any* output );
+
+            MyGUI::Widget* create( std::string& skin, 
+                                   MyGUI::IntCoord& coord, 
+                                   MyGUI::Align& align,
+                                   std::string& layer,
+                                   std::string& name,
+                                   MyGUI::Gui* gui );
+
+            void set( MyGUI::Widget* widget, Ymir::PropList& props );
     };
 
     /* 
@@ -75,15 +109,7 @@ namespace Ymir {
             int update( MyGUI::Gui* gui );
     };*/
 
-    template<typename T>
-    MyGUIObject<T>::MyGUIObject( const std::string& uuid,
-                                 const char* args,
-                                 int* idx ) : YmirObject(uuid)
-    {
-        this->decodeProps(args, idx);
-    }
-
-    template<typename T>
+    /*template<typename T>
     int MyGUIObject<T>::decodeProps( const char* data, int* idx ){
         int count = 0;
     
@@ -108,23 +134,23 @@ namespace Ymir {
             }
     
             if( prop == "position" && !decodeIntCoord(data, idx, &intCoord) ){
-                props.insert(std::pair<std::string, boost::any>(prop,intCoord));  
+                this->props.insert(std::pair<std::string, boost::any>(prop,intCoord));  
             }  else if( prop == "skin" && !decodeString(data, idx, &sval) ){
-                props.insert(std::pair<std::string, boost::any>(prop,sval));
+                this->props.insert(std::pair<std::string, boost::any>(prop,sval));
             } else if( prop == "align" && !decodeAlign(data, idx, &align) ){
-                props.insert(std::pair<std::string, boost::any>(prop, align));
+                this->props.insert(std::pair<std::string, boost::any>(prop, align));
             } else if( prop == "layer" && !decodeString(data, idx, &sval) ){
-                props.insert(std::pair<std::string, boost::any>(prop,sval));
+                this->props.insert(std::pair<std::string, boost::any>(prop,sval));
             } else if( prop == "caption" && !decodeString(data, idx, &sval) ){
-                props.insert(std::pair<std::string, boost::any>(prop,sval));
+                this->props.insert(std::pair<std::string, boost::any>(prop,sval));
             } else if( prop == "font" && !decodeString(data, idx, &sval) ){
-                props.insert(std::pair<std::string, boost::any>(prop,sval));
+                this->props.insert(std::pair<std::string, boost::any>(prop,sval));
             } else if( prop == "textAlign" && !decodeAlign(data, idx, &align) ){
-                props.insert(std::pair<std::string, boost::any>(prop, align)); 
+                this->props.insert(std::pair<std::string, boost::any>(prop, align)); 
             }
-            /*else if( prop == "textColor" && !decodeColor(data, idx, &color) ){
+            else if( prop == "textColor" && !decodeColor(data, idx, &color) ){
                 props.insert(std::pair<std::string, boost:any>(prop, color));
-            }*/
+            }
             
             else if( this->decodeProp(prop, data, idx) ){
                 return -EINVAL;
@@ -148,10 +174,10 @@ namespace Ymir {
         boost::any t1, t2, t3, t4, temp; 
     
         if( !gui ||
-            !hasProperty("position", &t1) ||
-            !hasProperty("skin", &t2) ||
-            !hasProperty("align", &t3) ||
-            !hasProperty("layer", &t4) )
+            !this->hasProperty("position", &t1) ||
+            !this->hasProperty("skin", &t2) ||
+            !this->hasProperty("align", &t3) ||
+            !this->hasProperty("layer", &t4) )
         {
             return NULL;
         }
@@ -161,14 +187,16 @@ namespace Ymir {
         align = boost::any_cast<MyGUI::Align>(t3);
         layer = boost::any_cast<std::string>(t4);
  
-        widget = gui->createWidget<T>(skin, intCoord, align, layer, uuid);
+        widget = gui->createWidget<T>(skin, intCoord, align, layer, this->uuid);
 
         //Set common properties shared by MyGUI widgets
-        if( hasProperty("caption", &temp) ){
+        if( this->hasProperty("caption", &temp) ){
             widget->setCaption(boost::any_cast<std::string>(temp));  
         }
 
         this->set(widget);
+
+        
 
         return widget;
     }
@@ -177,6 +205,13 @@ namespace Ymir {
     T* MyGUIObject<T>::update( MyGUI::Gui* gui ){
         return NULL; 
     }
-   
+
+    template<typename T>
+    void MyGUIObject<T>::destroy( MyGUI::Gui* gui ){
+        MyGUI::Widget* widget = gui->findWidgetT(this->uuid);
+
+        gui->destroyChildWidget(widget);    
+    }*/
+
 }
 #endif

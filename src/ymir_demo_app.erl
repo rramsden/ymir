@@ -8,6 +8,7 @@
         ]).
 
 start(_Type, StartArgs) ->
+    error_logger:info_msg("YMIR_DEMO_APP Start!~n"),
     ymir_demo_sup:start_link(StartArgs).
 
 shutdown() ->

@@ -1,14 +1,14 @@
 include ../Makedefs
 
-LIB_TARGETS := libOgreManager.so 
+LIB_TARGETS := libymir_core.so 
 
 CFLAGS += -I../packages/gen_cnode/include
 CFLAGS += -I$(ERL_INTERFACE_INCLUDE)
 
 ifeq ($(strip $(KERNEL)),Darwin)
-LDFLAGS := -Wall -fPIC -shared -flat_namespace -undefined suppress 
+LDFLAGS := -Wall -fPIC -rdynamic -shared -flat_namespace
 else
-LDFLAGS := -Wall -fPIC -shared -undefined 
+LDFLAGS := -Wall -fPIC -rdynamic -shared
 endif
 
 default: all ;
@@ -28,25 +28,26 @@ clobber: clean
 OgreEventListener.o: OgreEventListener.cpp OgreEventListener.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-YmirObject.o: YmirObject.cpp YmirObject.h
+Object.o: Object.cpp Object.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 MyGUIObject.o: MyGUIObject.cpp MyGUIObject.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
+OgreObject.o: CFLAGS += $(shell pkg-config --cflags OGRE MYGUI)
 OgreObject.o: OgreObject.cpp OgreObject.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-OgreManager.o: OgreManager.cpp OgreManager.h
+Core.o: Core.cpp Core.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 EventManager.o: EventManager.cpp EventManager.h
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libOgreManager.o: libOgreManager.cpp
+libymir_core.o: libymir_core.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libOgreManager.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE OIS MYGUI)
-libOgreManager.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE OIS MYGUI)
-libOgreManager.so: YmirObject.o MyGUIObject.o OgreObject.o OgreEventListener.o OgreManager.o EventManager.o libOgreManager.o
-	$(CPP) $(LDFLAGS) $^ $(LFLAGS) --whole-archive -lMyGUI.OgrePlatform -o $@
+libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE OIS MYGUI)
+libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE OIS MYGUI)
+libymir_core.so: Object.o OgreObject.o MyGUIObject.o OgreEventListener.o Core.o EventManager.o libymir_core.o
+	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -lMyGUI.OgrePlatform -o $@

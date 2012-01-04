@@ -1,10 +1,9 @@
 #include <errno.h>
 
+//#include "Core.h"
 #include "OgreObject.h"
 
-#include <OGRE/OgreCamera.h>
-#include <OGRE/OgreLight.h>
-#include <OGRE/OgreEntity.h>
+#include "Core.h"
 
 using namespace std;
 using namespace boost;
@@ -12,128 +11,123 @@ using namespace Ogre;
 
 namespace Ymir {
 
-    /********************** OgreCamera Definitions ************************/
-    int Camera::decodeProp( const string& prop, const char* data, int* idx ){
-        int rc = 0;
-        Vector3 vec3;
-        Real real;
-    
-        if( prop == "lookAt" && !decodeVector3(data, idx, &vec3) ){
-            props.insert(pair<string,any>(prop, vec3));
-        } else if( prop == "nearClip" && !decodeReal(data, idx, &real) ){
-            props.insert(pair<string,any>(prop, real));
-        } else if( prop == "farClip" && !decodeReal(data, idx, &real) ){
-            props.insert(pair<string,any>(prop, real));
+    int OgreObject::decodeProperty( const string& prop,
+                                    const char* data, 
+                                    int* idx,
+                                    boost::any* output )
+    {
+        int bval = 0;
+        Ogre::Vector3 vec3;
+        Ogre::Vector4 vec4;
+        Ogre::Radian radian;
+            
+        if( prop == "position" && !decodeVector3(data, idx, &vec3) ){
+            *output = vec3;
+        } else if( prop == "move" && !decodeVector3(data, idx, &vec3) ){
+            *output = vec3;
+        } else if( prop == "direction" && !decodeVector3(data, idx, &vec3) ){
+            *output = vec3; 
+        } else if( prop == "yaw" && !decodeRadian(data, idx, &radian) ){
+            *output = radian;
+        } else if( prop == "pitch" && !decodeRadian(data, idx, &radian) ){
+            *output = radian;
+        } else if( prop == "roll" && !decodeRadian(data, idx, &radian) ){
+            *output = radian;
+        } else if( prop == "rotation" && !decodeVector4(data, idx, &vec4) ){
+            *output = vec4;
+        } else if( prop == "scale" && !decodeVector3(data, idx, &vec3) ){
+            *output = vec3; 
+        } else if( prop == "isVisible" && !decodeBool(data, idx, &bval) ){
+            *output = bval;
         } else {
-            rc = -EINVAL;
-        }
+            return -EINVAL;
+        }    
     
-        return rc;
+        return 0;
     }
-    
-    Ogre::Camera* Camera::create( SceneManager* scene ){
-        return scene->createCamera(uuid);
-    }
-    
-    Ogre::Camera* Camera::fetch( SceneManager* scene ){
-        return scene->getCamera(uuid);
-    }
-    
-    void Camera::set( Ogre::Camera* camera ){
-        any temp;
 
-        if( hasProperty("nearClip", &temp) ){
-            camera->setNearClipDistance(any_cast<Real>(temp));
+    void OgreObject::set( Ogre::SceneNode* node, Ymir::PropList& props ){
+       //Set node generic properties
+        boost::any temp;
+        if( props.hasProperty("position", &temp) ){
+            node->setPosition(boost::any_cast<Ogre::Vector3>(temp));
+        } 
+    
+        if( props.hasProperty("move", &temp) ){
+            node->translate( node->getOrientation() * boost::any_cast<Ogre::Vector3>(temp) );
         }
     
-        if( hasProperty("farClip", &temp) ){
-            camera->setFarClipDistance(any_cast<Real>(temp));
-        }
-    }
-    
-    /********************** OgreLight Definitions ************************/
-    int Light::decodeProp( const string& prop, const char* args, int* idx ){
-        int rc = 0;
-        string source = "";
-    
-        if( prop == "source" && !decodeString(args, idx, &source) ){
-           
-            //Decode light source 
-            if( source == "point" ){
-                props.insert(pair<string,any>(prop, Ogre::Light::LT_POINT));
-            } else if( source == "spotlight" ){
-                props.insert(pair<string,any>(prop, Ogre::Light::LT_SPOTLIGHT));
-            } else {
-                props.insert(pair<string,any>(prop, Ogre::Light::LT_DIRECTIONAL));
-            }
-        } else {
-            rc = -EINVAL;
+        if( props.hasProperty("direction", &temp) ){
+            node->setDirection(boost::any_cast<Ogre::Vector3>(temp));
         }
     
-        return rc;
-    }
-    
-    Ogre::Light* Light::create( Ogre::SceneManager* scene ){
-        return scene->createLight(uuid);
-    }
-    
-    Ogre::Light* Light::fetch( Ogre::SceneManager* scene ){
-        return scene->getLight(uuid);
-    }
-    
-    void Light::set( Ogre::Light* light ){
-        any temp;
-
-        if( hasProperty("source", &temp) ){
-            light->setType(any_cast<Ogre::Light::LightTypes>(temp));
+        if( props.hasProperty("yaw", &temp) ){
+            node->yaw(boost::any_cast<Ogre::Radian>(temp));
         }
     
-        if( hasProperty("castShadows", &temp) ){
-            light->setCastShadows(any_cast<bool>(temp));
-        }
-    }
-    
-    /********************** OgreEntity Definitions ************************/
-    int Entity::decodeProp( const string& prop, const char* args, int* idx ){
-        int rc = 0;
-        string mesh = "";
-    
-        if( prop == "mesh" && !decodeString(args, idx, &mesh) ){
-            props.insert(pair<string, any>(prop, mesh));
-        } else {
-            rc = -EINVAL;
+        if( props.hasProperty("pitch", &temp) ){
+            node->pitch(boost::any_cast<Ogre::Radian>(temp));
         }
     
-        return rc;
-    }
-    
-    Ogre::Entity* Entity::create(SceneManager* scene){
-        any temp;
-        string mesh = "";
-    
-        if( !hasProperty("mesh", &temp) ){
-            return NULL;
+        if( props.hasProperty("roll", &temp) ){
+            node->roll(boost::any_cast<Ogre::Radian>(temp));
         }
     
-        mesh = any_cast<string>(temp);
-    
-        return scene->createEntity(uuid, mesh);
-    }
-    
-    Ogre::Entity* Entity::fetch(SceneManager* scene){
-        return scene->getEntity(uuid);
-    }
-    
-    void Entity::set(Ogre::Entity* entity){
-        any temp;
-
-        if( hasProperty("castShadows", &temp) ){
-            entity->setCastShadows(any_cast<bool>(temp));
+        if( props.hasProperty("lookAt", &temp) ){
+            node->lookAt(boost::any_cast<Ogre::Vector3>(temp), Ogre::Node::TS_WORLD);
         }
     }
 
-    /********************** Utility Function Definitions ************************/
-    int decodeReal( const char*data, int* idx, Real* output ){
+    void OgreObject::create( Ymir::PropList& props ){
+        Ogre::SceneManager* scene = Ymir::Core::getSingletonPtr()->getScene();
+
+
+        //Create Specific object
+        Ogre::MovableObject* object = this->create(scene, props);
+        if( !object ){
+            //<<HERE>> Throw exception
+        }
+
+        ptr = object;
+
+        //Create a scene node
+        Ogre::SceneNode* node = scene->getRootSceneNode()->createChildSceneNode(); 
+
+        //Attach object to node
+        node->attachObject( object );
+
+        //Set node properties
+        this->set(node, props);
+ 
+        //Set object specific properties
+        this->set(object, props);
+    }
+
+    void OgreObject::update( Ymir::PropList& props ){
+        Ogre::SceneManager* scene = Ymir::Core::getSingletonPtr()->getScene();
+        Ogre::MovableObject* object = this->fetch(scene);
+
+        //Update node properties
+        Ogre::SceneNode* node = object->getParentSceneNode();
+        if( !node ){
+            //<<HERE>> Throw exception
+        }
+
+        //Update node properties 
+        set(node, props);
+
+        //Update specific properties
+        this->set(object, props);
+    }
+
+    void OgreObject::destroy(){
+        Ogre::SceneManager* scene = Ymir::Core::getSingletonPtr()->getScene(); 
+
+        this->destroy(scene);
+    }
+
+
+    int OgreObject::decodeReal( const char*data, int* idx, Real* output ){
         int rc = 0;
         double val = 0;
     
@@ -144,7 +138,7 @@ namespace Ymir {
         return rc;
     }
     
-    int decodeRadian( const char* data, int* idx, Radian* output ){
+    int OgreObject::decodeRadian( const char* data, int* idx, Radian* output ){
         int rc = 0;
         Real val = Real(0);
     
@@ -155,7 +149,7 @@ namespace Ymir {
         return rc;
     }
     
-    int decodeColourVal( const char* data, int* idx, ColourValue* output ){
+    int OgreObject::decodeColourVal( const char* data, int* idx, ColourValue* output ){
         int rc = 0, arity = 0;
         double r = 0, g = 0, b = 0, a = 0;
     
@@ -200,7 +194,7 @@ namespace Ymir {
         return rc;
     }
     
-    int decodeVector3( const char* data, int* idx, Vector3* output ){
+    int OgreObject::decodeVector3( const char* data, int* idx, Vector3* output ){
         int rc = 0;
         int arity = 0;
         Real x, y, z;
@@ -241,7 +235,7 @@ namespace Ymir {
         return rc;
     }
     
-    int decodeVector4( const char* data, int* idx, Vector4* output ){
+    int OgreObject::decodeVector4( const char* data, int* idx, Vector4* output ){
         int rc = 0;
         int arity = 0;
         Real x, y, z, w;
@@ -284,5 +278,190 @@ namespace Ymir {
     
         exit:
         return rc;
+    }
+
+/********************** Camera Definitions ************************/
+    int Camera::decodePropList( const char* data, 
+                                int* idx, 
+                                Ymir::PropList* output )
+    {
+        propDecodeFP fps[] = { Ymir::OgreObject::decodeProperty,
+                               Ymir::Camera::decodeProperty,
+                               NULL };
+
+        return Ymir::Object::decodePropListBase( fps, data, idx, output ); 
+    }
+    
+    int Camera::decodeProperty( const string& prop, 
+                                const char* data, 
+                                int* idx,
+                                boost::any* output ){
+        int rc = 0;
+        Vector3 vec3;
+        Real real;
+    
+        if( prop == "lookAt" && !decodeVector3(data, idx, &vec3) ){
+            *output = vec3;
+        } else if( prop == "nearClip" && !decodeReal(data, idx, &real) ){
+            *output = real;
+        } else if( prop == "farClip" && !decodeReal(data, idx, &real) ){
+            *output = real;
+        } else {
+            rc = -EINVAL;
+        }
+    
+        return rc;
+    }
+    
+    Ogre::MovableObject* Camera::create( Ogre::SceneManager* scene,
+                                         Ymir::PropList& props )
+    {
+    
+        printf("Ogre camera create!\n");
+        return scene->createCamera(uuid);
+    }
+    
+    Ogre::MovableObject* Camera::fetch( Ogre::SceneManager* scene ){
+        return scene->getCamera(uuid);
+    }
+   
+    void Camera::destroy( Ogre::SceneManager* scene ){
+        scene->destroyCamera( uuid );
+    }
+
+    void Camera::set( Ogre::MovableObject* object, 
+                      Ymir::PropList& props ){
+        Ogre::Camera* camera = static_cast<Ogre::Camera*>(object);
+        any temp;
+
+        if( props.hasProperty("nearClip", &temp) ){
+            camera->setNearClipDistance(any_cast<Real>(temp));
+        }
+    
+        if( props.hasProperty("farClip", &temp) ){
+            camera->setFarClipDistance(any_cast<Real>(temp));
+        }
+    }
+
+/********************** Light Definitions ************************/
+    int Light::decodePropList( const char* data, 
+                               int* idx, 
+                               Ymir::PropList* output )
+    {
+        propDecodeFP fps[] = { Ymir::OgreObject::decodeProperty,
+                               Ymir::Light::decodeProperty,
+                               NULL };
+
+        return Ymir::Object::decodePropListBase( fps, data, idx, output ); 
+    }
+    
+    int Light::decodeProperty( const string& prop, 
+                               const char* args, 
+                               int* idx,
+                               boost::any* output ){
+        int rc = 0;
+        string source = "";
+    
+        if( prop == "source" && !decodeString(args, idx, &source) ){
+           
+            //Decode light source 
+            if( source == "point" ){
+                *output = Ogre::Light::LT_POINT;
+            } else if( source == "spotlight" ){
+                *output = Ogre::Light::LT_SPOTLIGHT;
+            } else {
+                *output = Ogre::Light::LT_DIRECTIONAL;
+            }
+        } else {
+            rc = -EINVAL;
+        }
+    
+        return rc;
+    }
+    
+    Ogre::MovableObject* Light::create( Ogre::SceneManager* scene,
+                                        Ymir::PropList& props )
+    {
+        return scene->createLight(uuid);
+    }
+    
+    Ogre::MovableObject* Light::fetch( Ogre::SceneManager* scene ){
+        return scene->getLight(uuid);
+    }
+   
+    void Light::destroy( Ogre::SceneManager* scene ){
+        scene->destroyLight(uuid);
+    }
+
+    void Light::set( Ogre::MovableObject* object, Ymir::PropList& props ){
+        Ogre::Light* light = static_cast<Ogre::Light*>(object);
+        any temp;
+
+        if( props.hasProperty("source", &temp) ){
+            light->setType(any_cast<Ogre::Light::LightTypes>(temp));
+        }
+    
+        if( props.hasProperty("castShadows", &temp) ){
+            light->setCastShadows(any_cast<bool>(temp));
+        }
+    }
+
+/********************** Entity Definitions ************************/
+    int Entity::decodePropList( const char* data, 
+                               int* idx, 
+                               Ymir::PropList* output )
+    {
+        propDecodeFP fps[] = { Ymir::OgreObject::decodeProperty,
+                               Ymir::Entity::decodeProperty,
+                               NULL };
+
+        return Ymir::Object::decodePropListBase( fps, data, idx, output ); 
+    } 
+    
+    int Entity::decodeProperty( const string& prop, 
+                                const char* args, 
+                                int* idx,
+                                boost::any* output ){
+        int rc = 0;
+        string mesh = "";
+    
+        if( prop == "mesh" && !decodeString(args, idx, &mesh) ){
+            *output = mesh;
+        } else {
+            rc = -EINVAL;
+        }
+    
+        return rc;
+    }
+    
+    Ogre::MovableObject* Entity::create( Ogre::SceneManager* scene, 
+                                         Ymir::PropList& props ){
+        any temp;
+        string mesh = "";
+    
+        if( props.hasProperty("mesh", &temp) ){
+            return NULL;
+        }
+    
+        mesh = any_cast<string>(temp);
+   
+        return scene->createEntity(uuid, mesh);
+    }
+    
+    Ogre::MovableObject* Entity::fetch( Ogre::SceneManager* scene ){
+        return scene->getEntity(uuid);
+    }
+    
+    void Entity::destroy( Ogre::SceneManager* scene ){
+        scene->destroyEntity(uuid);
+    }
+
+    void Entity::set( Ogre::MovableObject* obj, Ymir::PropList& props ){
+        Ogre::Entity* entity = static_cast<Ogre::Entity*>(obj);
+        any temp;
+
+        if( props.hasProperty("castShadows", &temp) ){
+            entity->setCastShadows(any_cast<bool>(temp));
+        }
     }
 }

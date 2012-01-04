@@ -7,6 +7,7 @@
 -record( eventState, { keyboard=dict:new(), 
                        mouse= dict:from_list( [{current, {0,0,0}},
                                                {previous, {0,0,0}}] ), 
+                       gui = dict:new(),
                        actions = []} ).
 
 init(Actions) when is_list(Actions) ->
@@ -26,6 +27,26 @@ init(Actions) when is_list(Actions) ->
 
 %Pre = fun( Keyboard, Mouse ) -> true / false. 
 %Action = fun( Keyboard, Mouse ) -> ok.  
+
+gui_action(ID, Val, Action, State) ->
+    Gui = State#eventState.gui,
+    NotVal = not Val,
+
+    case dict:find(ID, Gui) of
+        {ok, Val} ->
+            Action(State#eventState.keyboard, 
+                   State#eventState.mouse);
+        
+        {ok, NotVal} ->
+           ok; 
+
+        _Undef when Val == false ->
+            Action(State#eventState.keyboard, 
+                   State#eventState.mouse);
+
+        _Undef ->
+           ok 
+    end.
 
 keyboard_action(ID, Val, Action, State) ->
     Keyboard = State#eventState.keyboard,
@@ -86,6 +107,24 @@ process_action({{mouseDown, ID}, Action}, State) when is_integer(ID),
     mouse_action(ID, true, Action, State),
     State;                                                      
 
+process_action({{guiMouseDown, {Name, Button}}, Action}, State) when is_list(Name),
+                                                                     is_integer(Button) ->
+    gui_action({Name, Button}, true, Action, State),
+    State;
+
+process_action({{guiMouseUp, {Name, Button}}, Action}, State) when is_list(Name),
+                                                                   is_integer(Button) ->
+    gui_action({Name, Button}, false, Action, State),
+    State;
+
+process_action({{guiMouseButtonClick, Name}, Action}, State) ->
+    gui_action(Name, true, Action, State),
+
+    %%Process each click only once, clear the true flag
+    State#eventState{ gui = dict:store( Name,
+                                        false,
+                                        State#eventState.gui) };
+
 process_action({Prereq, Action}, State) when is_function(Prereq, 2),
                                              is_function(Prereq, 2) ->
      Keyboard = State#eventState.keyboard,
@@ -107,9 +146,7 @@ handle_event(frameStarted, State) ->
 
     %%Process the list of actions, calling every
     %%action whose prerequisites have been met.
-    lists:foldl(F, State, State#eventState.actions),
-
-    {ok, State};
+    {ok, lists:foldl(F, State, State#eventState.actions)};
 
 handle_event({keyPressed, Key}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,
@@ -138,7 +175,7 @@ handle_event({mouseReleased, {Key, _Pos}}, State) when is_record(State, eventSta
     Keyboard = State#eventState.keyboard,
     Mouse = State#eventState.mouse,
 
-    io:format("MousePressed! Key = ~p~n", [Key]),
+    io:format("MouseReleased! Key = ~p~n", [Key]),
 
     {ok, State#eventState{ keyboard = Keyboard, 
                            mouse = dict:store(Key, false, Mouse) }};
@@ -151,6 +188,33 @@ handle_event({mouseMoved, Pos}, State) when is_record(State, eventState) ->
     %%Update current mouse position
     {ok, State#eventState{ keyboard = Keyboard,
                            mouse = dict:store(current, {Ax, Ay, Az}, Mouse) }};
+
+
+handle_event({guiMousePressed, {ID, Button}}, State) when is_list(ID), 
+                                                          is_integer(Button),
+                                                          is_record(State, eventState) ->
+    
+    io:format("guiMousePressed! Key = ~p~n", [Button]),
+    
+    {ok, State#eventState{ gui = dict:store({ID, Button},
+                                            true,
+                                            State#eventState.gui) }};
+
+handle_event({guiMouseReleased, {ID, Button}}, State) when is_list(ID),
+                                                          is_integer(Button),
+                                                          is_record(State, eventState) ->
+    
+    io:format("guiMouseReleased! Key = ~p~n", [Button]),
+    {ok, State#eventState{ gui = dict:store({ID, Button},
+                                            false,
+                                            State#eventState.gui) }};
+
+handle_event({guiMouseButtonClick, ID}, State ) ->
+    io:format("guiMouseButtonClick! ID = ~p~n", [ID]),
+
+    {ok, State#eventState{ gui = dict:store(ID,
+                                            true,
+                                            State#eventState.gui) }};
 
 handle_event( Event, State )->
     io:format("Got Event! ~p~n", [Event]),

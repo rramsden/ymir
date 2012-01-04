@@ -2,35 +2,27 @@
 
 -behaviour(ymir_demo_module).
 
--export([title/0, description/0, handler/0, start/0]).
+-export([title/0, description/0, actions/0, start/0]).
 
-call( Msg )->
-    gen_server:call(ogre_manager, Msg).
-
-encode_object( {UUID, Type, Props} ) when is_list(UUID),
-                                          is_list(Type) ->
-    {UUID, Type, dict:to_list(Props)}.
-
-encode_objects([]) -> [];
-encode_objects( [H|T] ) -> 
-    [encode_object(H)] ++ encode_objects(T).
+call_worker( Func, Args ) ->
+    gen_server:call(ogre_manager, {worker, ymir_core, Func, Args}).
 
 title() -> "Camera Demo".
 description() -> "Free motion camera demo.".
-handler() -> ymir_demo_camera_events.
+actions() -> [].
 start() ->
      %%Generate some objects
-    Light = { "Light", "light", dict:from_list( [{"position", {20.0, 80.0, 0.0}},
-                                                 {"source", "point"} ])},
-    Head = {"Head", "entity", dict:from_list( [{"mesh", "ogrehead.mesh"}])},
-    Camera = { "Camera", "camera", dict:from_list( [{"position", {0.0, 0.0, 80.0}},
-                                                    {"lookAt", {0.0, 0.0, -300.0}},
-                                                    {"nearClip", 5.0}]) },
-    io:format("Loading objects!!~n"),
-    ok = call({'OgreManager', addObject, encode_objects([Camera, Light, Head])}),
+    Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
+                                 {"source", "point"} ]},
+    Head = {"Head", "entity", [{"mesh", "ogrehead.mesh"}]},
+    Camera = { "Camera", "camera", [{"position", {0.0, 0.0, 80.0}},
+                                    {"lookAt", {0.0, 0.0, -300.0}},
+                                    {"nearClip", 5.0}] },
 
-    io:format("Assigning viewport!~n"),
-    ok = call({'OgreManager', setViewport, ["Camera"]}).
+    io:format("Loading objects!!~n"),
+    ok = call_worker(add, [Light, Head]),
+
+    ok = call_worker(update, [Camera]). 
 
 %%-behaviour(gen_event).
 
