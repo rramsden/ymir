@@ -26,7 +26,7 @@ class EventListener : public OIS::KeyListener,
 
         virtual void guiMousePressed(MyGUI::Widget*, int, int, MyGUI::MouseButton){}
         virtual void guiMouseReleased(MyGUI::Widget*, int, int, MyGUI::MouseButton){}
-        virtual void guiMouseButtonClick(MyGUI::Widget*);
+        virtual void guiMouseButtonClick(MyGUI::Widget*){};
 
         virtual void windowMoved( Ogre::RenderWindow *window ) {}
         virtual void windowResized( Ogre::RenderWindow *window ){}

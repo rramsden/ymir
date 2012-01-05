@@ -1,6 +1,8 @@
 -module(ymir_demo).
 
--export([start_link/0, stop/2, module_start/3]).
+-export([start_link/0, stop/1, module_start/2]).
+
+-include("event_state.hrl").
 
 -record( demoState, { modules } ).
 
@@ -29,7 +31,7 @@ demo_load_module(ModulePath, {Modules, {Left, Top, Width, Height}}) ->
                                             {"caption", Module:title()} ]}
                                          ]}),
    
-    F = fun(Keyboard, Mouse) -> module_start(Module, Keyboard, Mouse) end,
+    F = fun(State) -> module_start(Module, State) end,
     ok = gen_event:call( event_manager, 
                          ymir_demo_event_manager,
                          {add_actions, [{{guiMouseButtonClick, Module:title()}, F}]} ),
@@ -74,7 +76,7 @@ init() ->
 
     ok = call({ymir_core, addEventHandler, []}),
 
-    F = fun(A, B) -> stop(A, B) end,
+    F = fun(S) -> stop(S) end,
     ok = gen_event:add_handler( event_manager, 
                                 ymir_demo_event_manager, 
                                 [{{keyDown, 1}, F}]),
@@ -100,32 +102,36 @@ start_link()->
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %  GEN_EVENT EXPORTS
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-stop(_Keyboard, _Mouse) -> 
+stop(State) -> 
     ok = call_worker({ymir_core, renderStop, []}),
 
     ok = call_worker({ymir_core, stop, []}),
 
-    application:stop(ymir_demo).
+    application:stop(ymir_demo),
+     
+    State.
 
-module_start(Module, _Keyboard, _Mouse) when is_atom(Module) ->
-    io:format("Attempting to hide button: ~p~n", [Module]),
+
+main_menu(Module, State) -> 
+    ok =  Module:stop(),
+
+    %% Hide the button <<HERE>> Hide all buttons or hide layer!
+    ok = call_worker({ymir_core, update, [ {Module:title(), "button", [{"visible", true}]} ]}),
+
+    State.
+
+   
+
+module_start(Module, State) when is_atom(Module) ->
     
     %% Hide the button <<HERE>> Hide all buttons or hide layer!
-    ok = call_worker({ymir_core, update, [ {Module:title(), "button", [{"visible", false}]} ]}).
-
-    %%Remove all of our previously defined actions
-    %ok = gen_event:call( event_manager, 
-    %                     ymir_demo_event_manager,
-    %                     clear_actions ).
-
-    %% Add module event handlers
-    %ok = gen_event:add_handler( event_manager, 
-    %                            ymir_demo_event_manager,
-    %                            Module:actions() ),
+    ok = call_worker({ymir_core, update, [ {Module:title(), "button", [{"visible", false}]} ]}),
 
     %% Turn over control to Module
-    %ok = Module:start().
+    ok = Module:start(),
 
-
-    
-
+    %% Escape key returns to menu menu
+    %%F = fun(S) -> main_menu(S) end,
+    %%Actions = [{{keyDown, 1}, F}] ++ Module:actions(),
+    ymir_demo_event_manager:add_actions( [{{keyDown, 16}, fun(S) -> main_menu(Module, S) end }] ++
+                                         Module:actions(), State ).

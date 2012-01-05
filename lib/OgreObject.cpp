@@ -439,7 +439,7 @@ namespace Ymir {
         any temp;
         string mesh = "";
     
-        if( props.hasProperty("mesh", &temp) ){
+        if( !props.hasProperty("mesh", &temp) ){
             return NULL;
         }
     
