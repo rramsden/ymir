@@ -79,7 +79,7 @@ init() ->
     F = fun(S) -> stop(S) end,
     ok = gen_event:add_handler( event_manager, 
                                 ymir_demo_event_manager, 
-                                [{{keyDown, 1}, F}]),
+                                [{{keyDown, ?KC_ESCAPE}, F}]),
 
     Files = filelib:wildcard("./ebin/ymir_demo_module_*.beam"),
     Modules = demo_load_modules(Files),
@@ -133,5 +133,5 @@ module_start(Module, State) when is_atom(Module) ->
     %% Escape key returns to menu menu
     %%F = fun(S) -> main_menu(S) end,
     %%Actions = [{{keyDown, 1}, F}] ++ Module:actions(),
-    ymir_demo_event_manager:add_actions( [{{keyDown, 16}, fun(S) -> main_menu(Module, S) end }] ++
+    ymir_demo_event_manager:add_actions( [{{keyDown, ?KC_Q}, fun(S) -> main_menu(Module, S) end }] ++
                                          Module:actions(), State ).

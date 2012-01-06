@@ -32,13 +32,13 @@ stop() ->
 
 %%%%%% Action Definitions
 
-mouse_rotate(1, true, {Dx, Dy, Dz}) -> {Dx * -0.01, Dy * -0.01, Dz};
+mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * -0.01, Dy * -0.01, Dz};
 mouse_rotate(_Key, _Val, Offset) -> Offset.
 
-position_offset(17, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
-position_offset(31, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
-position_offset(30, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
-position_offset(32, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
+position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
+position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
+position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
+position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
 
 position(State) when is_record(State, eventState) ->
