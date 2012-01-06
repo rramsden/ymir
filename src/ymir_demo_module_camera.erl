@@ -32,7 +32,7 @@ stop() ->
 
 %%%%%% Action Definitions
 
-mouse_rotate(1, true, {Dx, Dy, Dz}) -> {Dx * -0.02, Dy * -0.02, Dz};
+mouse_rotate(1, true, {Dx, Dy, Dz}) -> {Dx * -0.01, Dy * -0.01, Dz};
 mouse_rotate(_Key, _Val, Offset) -> Offset.
 
 position_offset(17, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
