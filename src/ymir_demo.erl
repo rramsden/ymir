@@ -1,8 +1,10 @@
 -module(ymir_demo).
 
--export([start_link/0, stop/1, module_start/2]).
+-export([start_link/0, stop/1, demo_start/2]).
 
 -include("event_state.hrl").
+
+-record( demo, { title, module } ).
 
 -record( demoState, { modules } ).
 
@@ -12,7 +14,7 @@ call( Msg )->
 call_worker( {Lib, Func, Args} ) -> 
     gen_server:call(ogre_manager, {worker, Lib, Func, Args}).
 
-demo_load_module(ModulePath, {Modules, {Left, Top, Width, Height}}) ->   
+load_demo(ModulePath, {Actions, {Left, Top, Width, Height}}) ->   
     ModuleRoot = filename:rootname(ModulePath),
     
     io:format("Trying to load ~s~n", [ModuleRoot]),
@@ -30,24 +32,21 @@ demo_load_module(ModulePath, {Modules, {Left, Top, Width, Height}}) ->
                                             {"skin", "Button"},
                                             {"caption", Module:title()} ]}
                                          ]}),
-   
-    F = fun(State) -> module_start(Module, State) end,
-    ok = gen_event:call( event_manager, 
-                         ymir_demo_event_manager,
-                         {add_actions, [{{guiMouseButtonClick, Module:title()}, F}]} ),
 
-    { dict:store(Module:title(), Module, Modules), {Left, Top + Height + 10, Width, Height}}.
+    %Record the demo in the database
+    F = fun() ->
+            mnesia:write( #demo{ title = Module:title(), module = Module} ) 
+        end,
 
-demo_load_modules(ModuleFiles) when is_list(ModuleFiles) ->
-    F = fun(M, A) -> demo_load_module(M, A) end,
-    
-    %%Add
-    {Modules, _Final} = lists:foldl(F, {dict:new(),{10, 10, 300, 26}}, ModuleFiles),
+    {atomic, ok} = mnesia:transaction(F),
 
-    Modules.
+
+    B = fun(S) -> demo_start(Module, S) end, 
+    {Actions ++ [{{guiMouseButtonClick, Module:title()}, B}], {Left, Top + Height + 10, Width, Height}}.
 
 init() -> 
 
+  
     ok = call({load, ymir_core}),
 
     ok = call({ymir_core, start, [ "Ymir Demo",
@@ -76,16 +75,22 @@ init() ->
 
     ok = call({ymir_core, addEventHandler, []}),
 
-    F = fun(S) -> stop(S) end,
-    ok = gen_event:add_handler( event_manager, 
-                                ymir_demo_event_manager, 
-                                [{{keyDown, ?KC_ESCAPE}, F}]),
+
+    %%Init mnesia to store set of active demos
+    mnesia:create_schema([node()]),    
+    mnesia:start(),
+    mnesia:create_table(demo, [{attributes, record_info(fields, demo)}]),
 
     Files = filelib:wildcard("./ebin/ymir_demo_module_*.beam"),
-    Modules = demo_load_modules(Files),
+    {Actions, _Final} = lists:foldl( fun(M, A) -> load_demo(M, A) end, 
+                                     {[], {10, 10, 300, 26}},
+                                     Files), 
 
-    %%<<HERE>> Load window components
-    #demoState{ modules = Modules }.
+    ok = gen_event:add_handler( event_manager, 
+                                ymir_demo_event_manager, 
+                                Actions++ [{{keyDown, ?KC_ESCAPE}, fun(S) -> stop(S) end}]),
+
+    #demoState{ }.
 
 render() ->
 
@@ -112,26 +117,36 @@ stop(State) ->
     State.
 
 
-main_menu(Module, State) -> 
-    ok =  Module:stop(),
+show_main_menu(Module, State) ->
 
-    %% Hide the button <<HERE>> Hide all buttons or hide layer!
-    ok = call_worker({ymir_core, update, [ {Module:title(), "button", [{"visible", true}]} ]}),
+    Module:stop(),
+
+    F = fun(D, A) -> 
+        ok = call_worker({ymir_core, update, [ {D#demo.title, "button", [{"visible", true}]} ]}),
+        A        
+    end,
+
+    %%Hide every loaded demo's GUI button
+    {atomic, ok} = mnesia:transaction( fun() -> mnesia:foldl(F, ok, demo) end ),
 
     State.
 
+hide_main_menu() ->
+    F = fun(D, A) -> 
+        ok = call_worker({ymir_core, update, [ {D#demo.title, "button", [{"visible", false}]} ]}),
+        A        
+    end,
+
+    %%Hide every loaded demo's GUI button
+    {atomic, ok} = mnesia:transaction( fun() -> mnesia:foldl(F, ok, demo) end ).
+
+demo_start(Module, State) when is_atom(Module) ->
    
-
-module_start(Module, State) when is_atom(Module) ->
-    
-    %% Hide the button <<HERE>> Hide all buttons or hide layer!
-    ok = call_worker({ymir_core, update, [ {Module:title(), "button", [{"visible", false}]} ]}),
-
+    hide_main_menu(),
+ 
     %% Turn over control to Module
     ok = Module:start(),
 
-    %% Escape key returns to menu menu
-    %%F = fun(S) -> main_menu(S) end,
-    %%Actions = [{{keyDown, 1}, F}] ++ Module:actions(),
-    ymir_demo_event_manager:add_actions( [{{keyDown, ?KC_Q}, fun(S) -> main_menu(Module, S) end }] ++
+    %% Q key returns to menu menu
+    ymir_demo_event_manager:add_actions( [{{keyDown, ?KC_Q}, fun(S) -> show_main_menu(Module, S) end }] ++
                                          Module:actions(), State ).
