@@ -100,6 +100,18 @@ process_action({mouseUp, ID}, Action, State) when is_integer(ID),
                                                     is_function(Action, 1) ->
     mouse_action(ID, false, Action, State);
 
+process_action(mouseMoved, Action, State) when is_function(Action, 1) ->
+
+   case dict:fetch(moved, State#eventState.mouse) of
+
+        true -> 
+            Action(State);
+
+        false ->
+            State 
+            
+   end;
+
 process_action({mouseDown, ID}, Action, State) when is_integer(ID), 
                                                       is_function(Action, 1) ->
     mouse_action(ID, true, Action, State);
@@ -137,9 +149,11 @@ process_action(Something, _Val, State) ->
 handle_event(frameStarted, State) ->
     F = fun(K, V, A) -> process_action(K, V, A) end,
 
+    Temp = dict:fold(F, State, State#eventState.actions),
+
     %%Process the list of actions, calling every
     %%action whose prerequisites have been met.
-    {ok, dict:fold(F, State, State#eventState.actions)};
+    {ok, Temp#eventState{mouse = dict:store(moved, false, Temp#eventState.mouse)} };
 
 handle_event({keyPressed, Key}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,
@@ -172,11 +186,13 @@ handle_event({mouseReleased, {Key, _Pos}}, State) when is_record(State, eventSta
 handle_event({mouseMoved, Pos}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,
     Mouse = State#eventState.mouse,
-    {_ID, [{Ax,_Rx},{Ay, _Ry}, {Az, _Rz}]} = Pos,
+    {_ID, [Dx, Dy, Dz]} = Pos,
+
+    Temp = State#eventState{mouse = dict:store(moved, true, State#eventState.mouse) },
 
     %%Update current mouse position
     {ok, State#eventState{ keyboard = Keyboard,
-                           mouse = dict:store(current, {Ax, Ay, Az}, Mouse) }};
+                           mouse = dict:store(current, {Dx, Dy, Dz}, Temp#eventState.mouse) }};
 
 
 handle_event({guiMousePressed, {ID, Button}}, State) when is_list(ID), 

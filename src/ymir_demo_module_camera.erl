@@ -32,7 +32,7 @@ stop() ->
 
 %%%%%% Action Definitions
 
-mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * -0.01, Dy * -0.01, Dz};
+mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
 mouse_rotate(_Key, _Val, Offset) -> Offset.
 
 position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
@@ -54,23 +54,17 @@ position(State) when is_record(State, eventState) ->
     end.
 
 rotation(State) when is_record(State, eventState) ->
-    F = fun( Key, Val, In ) -> mouse_rotate(Key, Val, In) end,
 
-    {Cx, Cy, Cz} = dict:fetch(current, State#eventState.mouse),
-    {Px, Py, Pz} = dict:fetch(previous, State#eventState.mouse),
-    Diff = {Cx-Px, Cy-Py, 0},
+    case dict:fetch( moved, State#eventState.mouse ) of
+        true -> 
+            {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
+            {Yaw, Pitch, _Roll} = {Rx * -0.001, Ry * -0.001, 0},
+            [ {Name, Val} || {Name, Val} <- [{"yaw", Yaw}, {"pitch", Pitch}], Val /= 0.0 ];
 
-    Offset = dict:fold(F, Diff, State#eventState.mouse),
-    if
-        Offset /= Diff ->
-            {Yaw, Pitch, Roll} = Offset,
-            Actions = [{"yaw", Yaw}, {"pitch", Pitch}, {"roll", Roll}],
-            [ {Name, Val} || {Name, Val} <- Actions, Val /= 0.0 ];
-
-        true ->
+        false -> 
             []
-    end.
-
+     end.
+        
 move(State) when is_record(State, eventState) ->
     
         case position(State) ++ rotation(State) of

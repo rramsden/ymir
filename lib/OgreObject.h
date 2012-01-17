@@ -42,10 +42,12 @@ namespace Ymir {
                                        boost::any* output );
 
             //Sets properties belonging to generic scene node 
-            void set( Ogre::SceneNode* node, Ymir::PropList& props );
+            void setNodeCommon( Ogre::SceneNode* node, Ymir::PropList& props );
     
             //Sets object specific properties
-            virtual void set( Ogre::MovableObject* object, Ymir::PropList& props ) = 0;
+            virtual void set( Ogre::SceneNode* node, 
+                              Ogre::MovableObject* object, 
+                              Ymir::PropList& props ) = 0;
 
             virtual Ogre::MovableObject* create( Ogre::SceneManager* scene, Ymir::PropList& props ) = 0;
             virtual Ogre::MovableObject* fetch( Ogre::SceneManager* scene ) = 0;
@@ -67,7 +69,9 @@ namespace Ymir {
                                        int* idx,
                                        boost::any* output );
 
-            void set( Ogre::MovableObject* object, Ymir::PropList& props );
+            void set( Ogre::SceneNode* node, 
+                      Ogre::MovableObject* object, 
+                      Ymir::PropList& props );
 
             Ogre::MovableObject* create( Ogre::SceneManager* scene, Ymir::PropList& props );
             Ogre::MovableObject* fetch( Ogre::SceneManager* scene );
@@ -89,7 +93,9 @@ namespace Ymir {
                                        int* idx,
                                        boost::any* output );
     
-            void set( Ogre::MovableObject* object, Ymir::PropList& props );
+            void set( Ogre::SceneNode* node, 
+                      Ogre::MovableObject* object, 
+                      Ymir::PropList& props );
 
             Ogre::MovableObject* create( Ogre::SceneManager* scene, Ymir::PropList& props );
             Ogre::MovableObject* fetch( Ogre::SceneManager* scene );
@@ -110,7 +116,9 @@ namespace Ymir {
                                        int* idx,
                                        boost::any* output );
 
-            void set( Ogre::MovableObject* object, Ymir::PropList& props );
+            void set( Ogre::SceneNode* node, 
+                      Ogre::MovableObject* object, 
+                      Ymir::PropList& props );
 
             Ogre::MovableObject* create( Ogre::SceneManager* scene, Ymir::PropList& props );
             Ogre::MovableObject* fetch( Ogre::SceneManager* scene );

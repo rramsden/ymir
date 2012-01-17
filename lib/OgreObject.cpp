@@ -46,7 +46,9 @@ namespace Ymir {
         return 0;
     }
 
-    void OgreObject::set( Ogre::SceneNode* node, Ymir::PropList& props ){
+    void OgreObject::setNodeCommon( Ogre::SceneNode* node, 
+                                    Ymir::PropList& props )
+    {
        //Set node generic properties
         boost::any temp;
         if( props.hasProperty("position", &temp) ){
@@ -96,11 +98,8 @@ namespace Ymir {
         //Attach object to node
         node->attachObject( object );
 
-        //Set node properties
-        this->set(node, props);
- 
-        //Set object specific properties
-        this->set(object, props);
+        //Inform the object to set its properties
+        this->set(node, object, props);
     }
 
     void OgreObject::update( Ymir::PropList& props ){
@@ -113,11 +112,7 @@ namespace Ymir {
             //<<HERE>> Throw exception
         }
 
-        //Update node properties 
-        set(node, props);
-
-        //Update specific properties
-        this->set(object, props);
+        set(node, object, props);
     }
 
     void OgreObject::destroy(){
@@ -197,7 +192,7 @@ namespace Ymir {
     int OgreObject::decodeVector3( const char* data, int* idx, Vector3* output ){
         int rc = 0;
         int arity = 0;
-        Real x, y, z;
+        Real x = Real(0), y = Real(0), z = Real(0);
     
         if( ei_decode_tuple_header(data, idx, &arity) || (arity != 3) ){
             rc = -EINVAL;
@@ -216,15 +211,15 @@ namespace Ymir {
             switch(i){
     
                 case 0:
-                    x = val;
+                    x = Real(val);
                     break;
     
                 case 1:
-                    y = val;
+                    y = Real(val);
                     break;
     
                 case 2:
-                    z = val;
+                    z = Real(val);
                     break;
             }
         }
@@ -297,6 +292,7 @@ namespace Ymir {
                                 int* idx,
                                 boost::any* output ){
         int rc = 0;
+        int fix = false;
         Vector3 vec3;
         Real real;
     
@@ -306,6 +302,8 @@ namespace Ymir {
             *output = real;
         } else if( prop == "farClip" && !decodeReal(data, idx, &real) ){
             *output = real;
+        } else if( prop == "fixYaw" && !decodeBool(data, idx, &fix) ){
+            *output = (bool)fix;
         } else {
             rc = -EINVAL;
         }
@@ -329,10 +327,42 @@ namespace Ymir {
         scene->destroyCamera( uuid );
     }
 
-    void Camera::set( Ogre::MovableObject* object, 
-                      Ymir::PropList& props ){
+    void Camera::set( Ogre::SceneNode* node,
+                      Ogre::MovableObject* object, 
+                      Ymir::PropList& props )
+    {
         Ogre::Camera* camera = static_cast<Ogre::Camera*>(object);
         any temp;
+
+        //Camera overrides SceneNode properties
+        if( props.hasProperty("position", &temp) ){
+            camera->setPosition(boost::any_cast<Ogre::Vector3>(temp));
+        } 
+    
+        if( props.hasProperty("move", &temp) ){
+            camera->moveRelative(boost::any_cast<Ogre::Vector3>(temp));
+            //node->translate( node->getOrientation() * boost::any_cast<Ogre::Vector3>(temp) );
+        }
+    
+        if( props.hasProperty("direction", &temp) ){
+            camera->setDirection(boost::any_cast<Ogre::Vector3>(temp));
+        }
+    
+        if( props.hasProperty("yaw", &temp) ){
+            camera->yaw(boost::any_cast<Ogre::Radian>(temp));
+        }
+    
+        if( props.hasProperty("pitch", &temp) ){
+            camera->pitch(boost::any_cast<Ogre::Radian>(temp));
+        }
+    
+        if( props.hasProperty("roll", &temp) ){
+            camera->roll(boost::any_cast<Ogre::Radian>(temp));
+        }
+    
+        if( props.hasProperty("lookAt", &temp) ){
+            camera->lookAt(boost::any_cast<Ogre::Vector3>(temp));
+        }
 
         if( props.hasProperty("nearClip", &temp) ){
             camera->setNearClipDistance(any_cast<Real>(temp));
@@ -341,6 +371,11 @@ namespace Ymir {
         if( props.hasProperty("farClip", &temp) ){
             camera->setFarClipDistance(any_cast<Real>(temp));
         }
+
+        if( props.hasProperty("fixYaw", &temp) ){
+            camera->setFixedYawAxis(any_cast<bool>(temp));
+        }
+
     }
 
 /********************** Light Definitions ************************/
@@ -393,9 +428,14 @@ namespace Ymir {
         scene->destroyLight(uuid);
     }
 
-    void Light::set( Ogre::MovableObject* object, Ymir::PropList& props ){
+    void Light::set( Ogre::SceneNode* node, 
+                     Ogre::MovableObject* object, 
+                     Ymir::PropList& props )
+    {
         Ogre::Light* light = static_cast<Ogre::Light*>(object);
         any temp;
+
+        setNodeCommon(node, props);
 
         if( props.hasProperty("source", &temp) ){
             light->setType(any_cast<Ogre::Light::LightTypes>(temp));
@@ -456,9 +496,14 @@ namespace Ymir {
         scene->destroyEntity(uuid);
     }
 
-    void Entity::set( Ogre::MovableObject* obj, Ymir::PropList& props ){
+    void Entity::set( Ogre::SceneNode* node,
+                      Ogre::MovableObject* obj, 
+                      Ymir::PropList& props )
+    {
         Ogre::Entity* entity = static_cast<Ogre::Entity*>(obj);
         any temp;
+
+        setNodeCommon(node, props);
 
         if( props.hasProperty("castShadows", &temp) ){
             entity->setCastShadows(any_cast<bool>(temp));
