@@ -28,10 +28,13 @@ clobber: clean
 OgreEventListener.o: OgreEventListener.cpp OgreEventListener.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-Object.o: Object.cpp Object.h
+ObjectBlueprint.o: ObjectBlueprint.cpp ObjectBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-MyGUIObject.o: MyGUIObject.cpp MyGUIObject.h
+EntityBlueprint.o: EntityBlueprint.cpp EntityBlueprint.h OgreBlueprint.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
+LightBlueprint.o: LightBlueprint.cpp LightBlueprint.h OgreBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 OgreObject.o: CFLAGS += $(shell pkg-config --cflags OGRE MYGUI)
@@ -47,7 +50,7 @@ EventManager.o: EventManager.cpp EventManager.h
 libymir_core.o: libymir_core.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE OIS MYGUI)
+libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE-Terrain OIS MYGUI)
 libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE OIS MYGUI)
-libymir_core.so: Object.o OgreObject.o MyGUIObject.o OgreEventListener.o Core.o EventManager.o libymir_core.o
+libymir_core.so: ObjectBlueprint.o EntityBlueprint.o LightBlueprint.o OgreEventListener.o Core.o EventManager.o libymir_core.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -lMyGUI.OgrePlatform -o $@

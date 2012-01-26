@@ -1,5 +1,5 @@
-#ifndef OGREOBJECT_H
-#define OGREOBJECT_H
+#ifndef _NODEOBJECT_H
+#define _NODEOBJECT_H
 
 //Ogre manager integration
 #include <OgreSceneManager.h>
@@ -8,41 +8,36 @@
 #include <OgreCamera.h>
 #include <OgreLight.h>
 #include <OgreEntity.h>
+#include <Terrain/OgreTerrain.h>
+#include <Terrain/OgreTerrainGroup.h>
 
-#include "Object.h"
+#include "OgreObject.h"
 
 typedef std::map<std::string,boost::any> PropList;
  
 namespace Ymir {
 
-    class OgreObject : public Ymir::Object {
+    class NodeObject : public Ymir::OgreObject {
    
         public:
-            OgreObject( const std::string& uuid,
-                        Ymir::Object::Type type ) : Ymir::Object(uuid, type) {} 
+            NodeObject( const std::string& uuid,
+                        Ymir::Object::Type type ) : Ymir::OgreObject(uuid, type) {} 
 
-            ~OgreObject(){}
+            ~NodeObject(){}
    
             void create( Ymir::PropList& props );
             void update( Ymir::PropList& actions );
             void destroy();
 
-            //Exported utility functions (Didn't really have a better place for them)
-            static int decodeReal( const char*data, int* idx, Ogre::Real* output );
-            static int decodeRadian( const char* data, int* idx, Ogre::Radian* output );
-            static int decodeColourVal( const char* data, int* idx, Ogre::ColourValue* output );
-            static int decodeVector3( const char* data, int* idx, Ogre::Vector3* output );
-            static int decodeVector4( const char* data, int* idx, Ogre::Vector4* output );
-
-        protected:
-          
             static int decodeProperty( const std::string& prop, 
                                        const char* args, 
                                        int* idx,
                                        boost::any* output );
-
+        protected:
+          
             //Sets properties belonging to generic scene node 
-            void setNodeCommon( Ogre::SceneNode* node, Ymir::PropList& props );
+            void setNodeCommon( Ogre::SceneNode* node, 
+                                Ymir::PropList& props );
     
             //Sets object specific properties
             virtual void set( Ogre::SceneNode* node, 
@@ -54,20 +49,48 @@ namespace Ymir {
             virtual void destroy( Ogre::SceneManager* scene ) = 0;
     };
 
-    class Camera : public OgreObject {
-    
+
+    class Terrain : public Ymir::OgreObject {
+
         public:
-            Camera( const std::string& uuid ) : OgreObject(uuid, Ymir::Object::Camera){}
-            ~Camera() {}
-   
+            Terrain( const std::string& uuid ) : Ymir::Object(uuid, Ymir::Object::Terrain){}
+            ~Terrain() {}
+
+            void create( Ymir::PropList& props );
+            void update( Ymir::PropList& actions );
+            void destroy();
+
             static int decodePropList( const char* args, int* idx, Ymir::PropList* output );
 
-        protected:
+            static int decodeAlign( const char* data,
+                                    int* idx, 
+                                    Ogre::Terrain::Alignment* out);
 
+            /*static int decodeGridLoc( const char* data,
+                                      int * idx,
+                                      std::pair<long, long>* out );*/
+
+        protected: 
+
+            static int decodeProperty( const std::string& prop,
+                                       const char* args, 
+                                       int* idx,
+                                       boost::any* output );
+
+            void set( Ymir::PropList& props );
+    };
+
+    class Camera : public NodeObject {
+    
+        public:
+            Camera( const std::string& uuid ) : NodeObject(uuid, Ymir::Object::Camera){}
+            ~Camera() {}
+   
             static int decodeProperty( const std::string& prop, 
                                        const char* args, 
                                        int* idx,
                                        boost::any* output );
+        protected:
 
             void set( Ogre::SceneNode* node, 
                       Ogre::MovableObject* object, 
@@ -78,10 +101,10 @@ namespace Ymir {
             void destroy( Ogre::SceneManager* );
     };
     
-    class Light : public OgreObject {
+    class Light : public NodeObject {
     
         public:
-            Light( const std::string& uuid ) : OgreObject(uuid, Ymir::Object::Light) {}
+            Light( const std::string& uuid ) : NodeObject(uuid, Ymir::Object::Light) {}
             ~Light() {}
    
             static int decodePropList( const char* args, int* idx, Ymir::PropList* output );
@@ -102,9 +125,9 @@ namespace Ymir {
             void destroy( Ogre::SceneManager* );
     };
     
-    class Entity : public OgreObject {
+    class Entity : public NodeObject {
         public:
-            Entity( const std:: string& uuid ) : OgreObject(uuid, Ymir::Object::Entity) {}
+            Entity( const std:: string& uuid ) : NodeObject(uuid, Ymir::Object::Entity) {}
             ~Entity() {}
     
             static int decodePropList( const char* args, int* idx, Ymir::PropList* output );

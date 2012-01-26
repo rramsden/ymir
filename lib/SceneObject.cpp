@@ -11,6 +11,219 @@ using namespace Ogre;
 
 namespace Ymir {
 
+
+/********************** Terrain Definitions ************************/
+
+    int decodeAlign( const char* data, int* idx, Ogre::Terrain::Alignment* out ){
+        std::string temp = "";
+
+        if( Ymir::Object::decodeString(data, idx, &temp) ){
+            return -EINVAL;
+        }
+
+        if( temp == "align_x_z" ){
+            *out = Ogre::Terrain::ALIGN_X_Z;
+        } else if ( temp == "align_x_y" ){
+            *out = Ogre::Terrain::ALIGN_X_Y;
+        } else if( temp == "align_y_z" ){
+            *out = Ogre::Terrain::ALIGN_Y_Z;
+        } else {
+            return -EINVAL;
+        }
+
+        return 0;
+    }
+                    
+
+    /*int decodeGridLoc( const char* data, 
+                       int* idx, 
+                       std::pair<long, long>* output )
+    {
+        int arity = 0;
+        long x, y;
+
+        if( ei_decode_tuple_header(data, idx, &arity) || 
+            (arity != 2) ||
+            Ymir::Object::decodeLong(data, idx, &x) ||
+            Ymir::Object::decodeLong(data, idx, &y) )
+        {
+            return -EINVAL;
+        }
+        
+        output->first = x;
+        output->second = y;
+
+        return 0;
+    }
+
+    int decodeLayer( const char* data,
+                     int* idx, 
+                     Ogre::Terrain::LayerInstance* output )
+    {
+        int arity = 0, count = 0;
+        Ogre::Real size;
+        std::vector<std::string> textures;
+        Ogre::Terrain::LayerInstanceList layers;
+
+        if( ei_decode_tuple_header(data, idx, &arity) || 
+            (arity != 2) ||
+            Ogre::Object::decodeReal(data, idx, &size) ||
+            decodeVector<std::string>(data, idx, decodeString, &textures) )
+        {
+            return -EINVAL;
+        }
+
+
+        output->worldSize = size;
+        output->textureNames = textures;
+
+        return 0;
+    }*/
+
+    void Terrain::create( Ymir::PropList& props ){
+        Ogre::TerrainGroup* tg = NULL;
+        boost::any align, tSize, wSize, pre, post, origin;
+        //std::list<std::pair<long, long> >::iterator itPages;
+        //std::list<std::pair<long, long> > pages;
+
+        //Required:  SceneManager, Alignment, Size, WorldSize
+        
+        //<<HERE>> For now assuming just one active scene, this may need to
+        //change
+        Ogre::SceneManager* sm = Ymir::Core::getSingletonPtr()->getScene();
+       
+        if( !props.hasProperty("alignment", &align) &&
+            !props.hasProperty("terrainSize", &tSize) &&
+            !props.hasProperty("worldSize", &wSize) &&
+            !props.hasProperty("prefix", &pre) &&
+            !props.hasProperty("postfix", &post) &&
+            !props.hasProperty("origin", &origin) )
+        {
+            //<<HERE>> Error!
+            return;
+        }
+       
+        ptr = tg =  new Ogre::TerrainGroup( sm,
+                                            boost::any_cast<Ogre::Terrain::Alignment>(align),
+                                            boost::any_cast<uint16>(tSize),
+                                            boost::any_cast<Ogre::Real>(wSize) );
+
+        tg->setOrigin(boost::any_cast<Ogre::Vector3>(origin));
+        tg->setFilenameConvention(boost::any_cast<std::string>(pre),
+                                  boost::any_cast<std::string>(post));
+
+
+        set(props);
+
+
+        /*pages = boost::any_cast<std::list<std::pair<long, long> > >(tPages);
+        for( itPages = pages.begin(); itPages != pages.end(); itPages++ ){
+            long x = *itPages->first, y = *itPages->second;
+            Ogre::String filename = tg->generateFilename(x, y);
+            Ogre::ResourceGroupManager* rgm = Ogre::ResrouceGroupManager::getSingletonPtr();
+
+            //Does the heightmap data exists for this tile already?
+            if( rgm->resourceExists(tg->getResrouceGroup(), filename) ){
+                tg->defineTerrain(x, y); //If so, simply load it
+            } 
+        }*/
+    }
+
+    void Terrain::update( Ymir::PropList& props ){
+
+       //set(props); 
+    }
+
+
+    //<<HERE>> TODO
+    void Terrain::destroy( ){
+
+        
+
+    }
+
+    int Terrain::decodePropList( const char* data, 
+                                 int* idx, 
+                                 Ymir::PropList* output )
+    {
+        propDecodeFP fps[] = { Ymir::Terrain::decodeProperty,
+                               NULL };
+
+        return Ymir::Object::decodePropListBase( fps, data, idx, output ); 
+    }
+
+    int Terrain::decodeProperty( const string& prop, 
+                                 const char* data, 
+                                 int* idx,
+                                 boost::any* output )
+    {
+        long iSize;
+        std::string str = "";
+        std::list<std::pair<long,long> > pages;
+        std::vector<Ogre::Terrain::LayerInstance> layers;
+        Ogre::Terrain::Alignment align;
+        Ogre::Vector3 vec3;
+        Ogre::Real rSize;
+
+        if( prop == "prefix" && !decodeString(data, idx, &str) ){
+            *output = str;
+        } else if ( prop == "postfix" && !decodeString(data, idx, &str) ){
+            *output = str;
+        } else if( prop == "origin" && !OgreObject::decodeVector3(data, idx, &vec3) ){
+            *output = vec3;
+        } else if ( prop == "align" && !decodeAlign(data, idx, &align) ){
+            *output = align;
+        } else if ( prop == "terrainSize" && !decodeLong(data, idx, &iSize) ){
+            *output = (unsigned short) iSize;
+        } else if( prop == "worldSize" && !OgreObject::decodeReal(data, idx, &rSize) ){
+            *output = rSize;
+        } else if( prop == "resourceGroup" && !decodeString(data, idx, &str) ){
+            *output = str;
+        } 
+        
+        /*else if( prop == "layers" && !decodeVector<Ogre::Terrain::LayerInstance> >(data, idx, decodeLayer, &layers))
+        {
+            *output = layers;
+        } else if( prop == "pages" && !decodeList<std::pair<long, long> >(data, idx, decodeGridLoc, &pages)) 
+        {
+            *output = pages; 
+        }*/ else {
+            return -EINVAL;
+        }
+
+        return 0;
+    }
+
+    void Terrain::set(Ymir::PropList& props){
+        boost::any temp;
+        Ogre::TerrainGroup* tg = static_cast<Ogre::TerrainGroup*>(ptr);
+        /*Ogre::Terrain::ImportData& imp = tg->getDefaultImportSettings();
+
+        if( props.hasProperty("origin", &temp) ){
+            tg->setOrigin(boost::any_cast<Ogre::Vector3>(temp));
+        }*/
+    
+        if( props.hasProperty("resourceGroup", &temp) ){
+            tg ->setResourceGroup(boost::any_cast<std::string>(temp));
+        }
+
+        /*if( props.hasProperty("inputScale", &temp) ){
+            im.inputScale = boost::any_cast<long>
+
+        }
+
+        if( props.hasProperty("layers", &temp) ){
+            imp.layerList = boost::any_cast<Ogre::Terrain::LayerInstanceList>(temp);
+        }
+
+        if( props.hasProperty("pages", &temp) ){
+
+
+        }*/
+    }
+
+
+/********************** OgreObject Definitions ************************/
     int OgreObject::decodeProperty( const string& prop,
                                     const char* data, 
                                     int* idx,

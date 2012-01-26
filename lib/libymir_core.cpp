@@ -36,7 +36,10 @@ int decodeObject( const char* args,
     }
 
     switch( *type ){
-    
+   
+        case Ymir::Object::Terrain:
+            rc = Ymir::Terrain::decodePropList(args, idx, props);
+
         case Ymir::Object::Camera:
             rc = Ymir::Camera::decodePropList(args, idx, props);
             break;

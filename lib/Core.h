@@ -2,8 +2,9 @@
 #define CORE_H
 
 //OGRE 
-#include <OGRE/Ogre.h>
-#include <OGRE/OgreLog.h>
+#include <Ogre.h>
+#include <OgreLog.h>
+#include <OgreTerrainPaging.h>
 
 //MyGUI
 #include <MyGUI.h>
@@ -17,8 +18,8 @@
 #include "EventManager.h"
 
 //Generic Object Support
-#include "OgreObject.h"
-#include "MyGUIObject.h"
+//#include "OgreObject.h"
+//#include "MyGUIObject.h"
 
 //Object delegation
 #include "Task.h"
@@ -57,20 +58,33 @@ namespace Ymir {
             void renderStop();
    
             //Object management
-            void create( const std::string& uuid, Ymir::Object::Type type, Ymir::PropList& props );
-            void update( const std::string& uuid, Ymir::PropList& actions);
-            void destroy( const std::string& uuid );
+            void create( const std::string& scene,
+                         const std::string& uuid, 
+                         Ymir::ObjectType type, 
+                         Ymir::PropList& props );
+
+            void update( const std::string& scene,
+                         const std::string& uuid, 
+                         Ymir::PropList& actions);
+
+            void destroy( const std::string& scene, 
+                          const std::string& uuid );
 
             //Viewport management
             void setViewport( const String& name );
    
             //Scene Management
+            void createScene( const std::string& name,
+                              Ymir::PropList& props );
+
+            Ogre::SceneManager* findScene( string& );
+            
+            void deleteScene( const std::string& name);
+            
+            Ogre::SceneManager* getActiveScene(){ return mActiveScene; }
+            void setActiveScene(std::string&);
+
             void destroyAllObjects();
-
-            //Getters
-            Ogre::SceneManager* getScene() { return scene; }
-
-            //void clearScene();
 
             //OGRE hooks
             //bool frameStarted(const FrameEvent &event);
@@ -83,17 +97,20 @@ namespace Ymir {
             void setupInputDevices();
             void loadResources();
 
-            void createActual( const string& uuid,
+            /*void createActual( const string& scene,
+                               const string& uuid,
                                Ymir::Object::Type type,
                                Ymir::PropList& props );
 
-            void updateActual( const string& uuid,
+            void updateActual( const string& scene,
+                               const string& uuid,
                                Ymir::Object::Type type,
                                Ymir::PropList& props );
             
-            void destroyActual( const string& uuid,
+            void destroyActual( const string& scene,
+                                const string& uuid,
                                 Ymir::Object::Type type,
-                                Ymir::PropList& props );
+                                Ymir::PropList& props );*/
             
             Ogre::Root* root;
             Ogre::Log* log;
@@ -106,9 +123,12 @@ namespace Ymir {
     
             EventManager* em;
             Ogre::Viewport* viewport;
-            Ogre::SceneManager* scene;
+            
+            Ogre::SceneManager* mActiveScene;
+            Ogre::PageManager* mActivePageManager;
+            Ogre::TerrainPaging* mTerrainPaging;
 
-            std::map<std::string, Ymir::Object*> objects;
+            std::map<std::string, Ogre::SceneManager*> scenes;
 
             static Core* core;
     };
@@ -128,7 +148,7 @@ namespace Ymir {
             CoreFP fp;
     };
 
-    class CoreObjectTask : public Task {
+    /*class CoreObjectTask : public Task {
 
         typedef void (Ymir::Core::*CoreFP)( const std::string&, 
                                             Ymir::Object::Type type,
@@ -152,7 +172,7 @@ namespace Ymir {
             Ymir::Object::Type type;
             Ymir::PropList props;
             
-    };
+    };*/
     /*class CoreObjectTask : public Task {
         typedef void (Ymir::Core::*CoreObjectFP) (Ymir::Object*);
 
@@ -176,7 +196,6 @@ namespace Ymir {
             CoreObjectFP fp;
             Ymir::Object* object;
     };*/
-
 }
 
 #endif
