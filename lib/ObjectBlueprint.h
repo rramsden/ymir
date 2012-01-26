@@ -99,12 +99,6 @@ namespace Ymir {
             static int decodeLong( const char*, int*, boost::any* );
             static int decodeType( const char*, int*, boost::any* );
 
-            /*static int decodeString( const char* data, int* idx, std::string* output );
-            static int decodeInt( const char* data, int* idx, int* out );
-            static int decodeFloat( const char* data, int* idx, float* output );
-            static int decodeBool( const char* data, int* idx, int* output );
-            static int decodeLong( const char* data, int* idx, long* output );
-            static int decodeType( const char* data, int* idx, Ymir::Object::Type* output );*/
             template<typename T>
             static int decodeList( const char* data,
                                    int* idx, 
