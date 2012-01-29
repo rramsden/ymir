@@ -12,7 +12,7 @@ namespace Ymir {
     int LightBlueprint::decodeLightSource( const char* data, int* idx, boost::any* output ){
        std::string temp;
 
-        if( decodeString(data, idx, &temp) ){
+        if( Ymir::decodeString(data, idx, &temp) ){
             return -EINVAL;
         } 
 
@@ -46,8 +46,8 @@ namespace Ymir {
         return scene->getLight(id);
     }
 
-    void LightBlueprint::destroyOgrebject( std::string& id, 
-                                           Ogre::SceneManager* scene )
+    void LightBlueprint::destroyOgreObject( std::string& id, 
+                                            Ogre::SceneManager* scene )
     {
         scene->destroyLight(id);
     }

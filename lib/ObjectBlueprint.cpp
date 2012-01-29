@@ -1,84 +1,25 @@
 #include "ObjectBlueprint.h"
+#include "DecodeBasic.h"
 
-using namespace Ymir;
+#include "Core.h"
+
 using namespace std;
 using namespace boost;
 
 namespace Ymir {
 
     void ObjectBlueprint::set( void* ptr, PropList& props ){
-        Blueprint::iterator it;
+        PropList::iterator pIT;
+        Blueprint::iterator bIT;
 
-        for(it = mBlueprint.begin(); it != mBlueprint.end(); it++){
-            boost::any temp;
+        for( pIT = props.begin(); pIT != props.end(); pIT++ ){
+            bIT = mBlueprint.find(pIT->first);
 
-            if( props.hasProperty(it->first, &temp) ){
-                
-                if( it->second.second ){
-                    it->second.second(ptr, temp);
-                }
+            if( (bIT != mBlueprint.end()) && bIT->second.second ){
+                bIT->second.second(ptr, pIT->second);
             }
         }
     }
-
-    int ObjectBlueprint::decodeBool( const char* data, int* idx, bool* output ){
-        int temp = 0;
-
-        if( !ei_decode_boolean(data, idx, &temp) ){
-            *output = (bool)temp;
-        } else {
-            return -EINVAL;
-        }
-
-        return 0;
-    }
-    
-    int ObjectBlueprint::decodeString( const char* data, int* idx, string* output ){
-        int rc = 0;
-        char temp [256] = {0};
-        
-        if( !(rc = ei_decode_string(data, idx, temp)) ){
-            *output = string(temp);
-        }
-    
-        return rc;
-    }
-    
-    int ObjectBlueprint::decodeFloat( const char* data, int* idx, float* output ){
-        int rc = 0;
-        double temp = 0;
-        
-        rc = ei_decode_double(data, idx, &temp);
-    
-        *output = ((float)temp);
-    
-        return rc;
-    }
-    
-    int ObjectBlueprint::decodeType( const char* data, int* idx, Ymir::ObjectType* output ){
-        int rc = 0;
-        string type = "";
-    
-        if( !(rc = decodeString(data, idx, &type)) ){
-            
-            if( type == "camera" ){
-                *output = Ymir::Camera;
-            } else if( type == "light" ){
-                *output = Ymir::Light;
-            } else if( type == "entity" ){
-                *output = Ymir::Entity;
-            } else if( type == "window" ){
-                *output = Ymir::Window;
-            } else if( type == "button" ){
-                *output = Ymir::Button;   
-            } else {
-                *output = Ymir::Invalid;
-            }
-        }
-    
-        return rc;
-    }
-}
 
     int ObjectBlueprint::decodeBool( const char* data, 
                                      int* idx, 
@@ -86,7 +27,7 @@ namespace Ymir {
     {
         bool temp;
 
-        if( !decodeBool(data, idx, &temp) ){
+        if( !Ymir::decodeBool(data, idx, &temp) ){
             *output = temp;
         } else {
             return -EINVAL;
@@ -108,7 +49,7 @@ namespace Ymir {
     {
         long temp;
 
-        if( decodeLong(data, idx, &temp) ){
+        if( Ymir::decodeLong(data, idx, &temp) ){
            *output = temp; 
         } else {
             return -EINVAL;   
@@ -123,7 +64,7 @@ namespace Ymir {
     {
         std::string temp;
 
-        if( !decodeString(data, idx, &temp) ){
+        if( !Ymir::decodeString(data, idx, &temp) ){
             *output = temp;
         } else {
             return -EINVAL;
@@ -138,7 +79,7 @@ namespace Ymir {
     {
         float temp = 0;
         
-        if( !decodeFloat(data, idx, &temp) ){
+        if( !Ymir::decodeFloat(data, idx, &temp) ){
             *output = temp;
         } else {
             return -EINVAL;
@@ -147,7 +88,7 @@ namespace Ymir {
         return 0;
     }
     
-    int ObjectBlueprint::decodeType( const char* data, 
+    /*int ObjectBlueprint::decodeType( const char* data, 
                                      int* idx, 
                                      boost::any* output )
     {
@@ -160,7 +101,7 @@ namespace Ymir {
         }
     
         return 0;
-    }
+    }*/
 
     int ObjectBlueprint::decodePropList( const char* data, 
                                          int* idx, 
@@ -181,7 +122,7 @@ namespace Ymir {
             //Every prop must be of the form {name:string, prop:varies}
             if( ei_decode_tuple_header(data, idx, &arity) ||
                 (arity != 2) ||
-                decodeString(data, idx, &prop) )
+                Ymir::decodeString(data, idx, &prop) )
             {
                 return -EINVAL;
             }
@@ -199,6 +140,9 @@ namespace Ymir {
             } else {
                 return -EINVAL;
             }
+
+            //Add the entry to the output
+            output->insert(PropListEntry(prop, val));
         }
     
         //Decode end of list
@@ -208,3 +152,4 @@ namespace Ymir {
 
         return 0;
     }
+}

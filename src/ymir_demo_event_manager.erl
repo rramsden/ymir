@@ -127,6 +127,8 @@ process_action({guiMouseUp, {Name, Button}}, Action, State) when is_list(Name),
 process_action({guiMouseButtonClick, Name}, Action, State) ->
     State2 = gui_action(Name, true, Action, State),
 
+
+
     %%Process each click only once, clear the true flag
     State2#eventState{ gui = dict:store( Name,
                                          false,

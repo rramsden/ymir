@@ -134,6 +134,7 @@ show_main_menu(Module, State) ->
 hide_main_menu() ->
     F = fun(D, A) -> 
         ok = call_worker({ymir_core, update, [ {D#demo.title, "button", [{"visible", false}]} ]}),
+        io:format("Hiding button: ~p~n", [D#demo.title]), 
         A        
     end,
 

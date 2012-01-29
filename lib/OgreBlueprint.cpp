@@ -1,5 +1,8 @@
 #include "OgreBlueprint.h"
 
+using namespace Ogre;
+
+namespace Ymir {
 int OgreBlueprint::decodeReal( const char* data, 
                                int* idx, 
                                Ogre::Real* output )
@@ -187,7 +190,7 @@ int OgreBlueprint::decodeRadian( const char* data,
     return 0;
 }
 
-int OgreBlueprint::decodeColourVal( const char* data, int* idx, boost::any* output);
+int OgreBlueprint::decodeColourVal( const char* data, int* idx, boost::any* output)
 {
     Ogre::ColourValue temp;
 
@@ -200,7 +203,7 @@ int OgreBlueprint::decodeColourVal( const char* data, int* idx, boost::any* outp
     return 0;
 }
 
-int OgreBlueprint::decodeVector3( const char* data, int* idx, boost::any* output );
+int OgreBlueprint::decodeVector3( const char* data, int* idx, boost::any* output )
 {
     Ogre::Vector3 temp;
 
@@ -213,7 +216,7 @@ int OgreBlueprint::decodeVector3( const char* data, int* idx, boost::any* output
     return 0;
 }
 
-int OgreBlueprint::decodeVector4( const char* data, int* idx, boost::any* output);
+int OgreBlueprint::decodeVector4( const char* data, int* idx, boost::any* output)
 {
     Ogre::Vector4 temp;
 
@@ -224,4 +227,6 @@ int OgreBlueprint::decodeVector4( const char* data, int* idx, boost::any* output
     }
 
     return 0;
+}
+
 }

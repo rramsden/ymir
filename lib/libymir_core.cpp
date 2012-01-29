@@ -2,11 +2,9 @@
 
 #include "gen_cnode.h"
 
+#include "DecodeBasic.h"
 #include "Core.h"
-
-#include "OgreObject.h"
-#include "MyGUIObject.h"
-
+#include "ObjectFactory.h"
 #include "OgreEventListener.h"
 
 using namespace std;
@@ -17,63 +15,14 @@ using namespace boost;
 using namespace Ymir;
 
 //References to singleton OM..used by gen_cnode and lua interaces
-static Core* om = NULL;
-
-int decodeObject( const char* args, 
-                  int* idx, 
-                  std::string* uuid,
-                  Ymir::Object::Type* type,
-                  Ymir::PropList* props )
-{
-    int rc = 0;
-
-    if( Ymir::Object::decodeString(args, idx, uuid) ||
-        Ymir::Object::decodeType(args, idx, type) ||
-        (*type <= Ymir::Object::Invalid) || 
-        (*type >= Ymir::Object::Max) )
-    {
-        return -EINVAL;
-    }
-
-    switch( *type ){
-   
-        case Ymir::Object::Terrain:
-            rc = Ymir::Terrain::decodePropList(args, idx, props);
-
-        case Ymir::Object::Camera:
-            rc = Ymir::Camera::decodePropList(args, idx, props);
-            break;
-
-        case Ymir::Object::Light:
-            rc = Ymir::Light::decodePropList(args, idx, props);
-            break;
-
-        case Ymir::Object::Entity:
-            rc = Ymir::Entity::decodePropList(args, idx, props);
-            break;
-
-        case Ymir::Object::Window:
-            rc = Ymir::Window::decodePropList(args, idx, props);
-            break;
-
-        case Ymir::Object::Button:
-            rc = Ymir::Button::decodePropList(args, idx, props);
-            break;
-
-        default:
-            //Never reached
-            break;
-    }   
-
-    return rc;
-}
+static Core* core = NULL;
 
 extern "C" {
 
 
 /* --------------  GEN_CNODE Exports ------------------- */
 GEN_CNODE_STATE_NEW() {
-    return (struct gen_cnode_lib_state_s *) (om = Ymir::Core::getSingletonPtr());
+    return (struct gen_cnode_lib_state_s *) (core = Ymir::Core::getSingletonPtr());
 }
 
 GEN_CNODE_DEFINE(start){
@@ -143,7 +92,7 @@ GEN_CNODE_DEFINE( addResourceLocation ){
     //Load all resource locations given
     for( i=0; i < argc; i++ ){
         int arity = 0;
-        int recurse = 0;
+        bool recurse = 0;
         string type = "", 
                path = "", 
                group = "";
@@ -151,10 +100,10 @@ GEN_CNODE_DEFINE( addResourceLocation ){
         //Each arg must be of the form {path, type, group, recursive}
         //or {string, string, string, boolean} respectively 
         if( ei_decode_tuple_header(args, &idx, &arity) || arity != 4 ||
-            Ymir::Object::decodeString(args, &idx, &path) ||
-            Ymir::Object::decodeString(args, &idx, &type) ||
-            Ymir::Object::decodeString(args, &idx, &group) ||
-            Ymir::Object::decodeBool(args, &idx, &recurse) )
+            Ymir::decodeString(args, &idx, &path) ||
+            Ymir::decodeString(args, &idx, &type) ||
+            Ymir::decodeString(args, &idx, &group) ||
+            Ymir::decodeBool(args, &idx, &recurse) )
         {
             rc = -EINVAL;
             gen_cnode_format(resp, "{error, einval}");
@@ -183,7 +132,7 @@ GEN_CNODE_DEFINE( initialiseMyGUI ){
     int idx = 0;
     string config = "";
 
-    if( (argc != 1) || Ymir::Object::decodeString(args, &idx, &config) ){
+    if( (argc != 1) || Ymir::decodeString(args, &idx, &config) ){
         gen_cnode_format(resp, "{error, einval}");
         return -EINVAL;
     }
@@ -208,7 +157,7 @@ GEN_CNODE_DEFINE( create ){
         //UUID, type, and prop list are requred
         if( ei_decode_tuple_header(args, &idx, &arity) || 
             (arity != 3) ||
-            decodeObject(args, &idx, &uuid, &type, &props) ) 
+            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) ) 
         { 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error,einval}");
@@ -216,7 +165,7 @@ GEN_CNODE_DEFINE( create ){
         }
 
         try {
-            om->create(uuid, type, props);
+            core->create(uuid, type, props);
         }
 
         catch( Ogre::Exception e ){
@@ -245,7 +194,7 @@ GEN_CNODE_DEFINE( update ){
         //UUID, type, and prop list are requred
         if( ei_decode_tuple_header(args, &idx, &arity) || 
             (arity != 3) || 
-            decodeObject(args, &idx, &uuid, &type, &props) )
+            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) )
         { 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error,einval}");
@@ -253,7 +202,7 @@ GEN_CNODE_DEFINE( update ){
         }
   
         try {
-            om->update(uuid, props);
+            core->update(uuid, type, props);
         }
 
         catch( ... ){
@@ -273,31 +222,38 @@ GEN_CNODE_DEFINE( update ){
 //and calls the appropriate scene removal function
 GEN_CNODE_DEFINE( destroy ){
     int rc = 0;
-   
-    for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
-        string uuid = "";
 
-        if( Ymir::Object::decodeString(args, &idx, &uuid) )
-        {
+    //Decode each update object
+    for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
+        int arity = 0;
+        string uuid = "";
+        Ymir::Object::Type type = Ymir::Object::Invalid;
+        Ymir::PropList props = Ymir::PropList();
+
+        //UUID, type, and prop list are requred
+        if( ei_decode_tuple_header(args, &idx, &arity) || 
+            (arity != 3) || 
+            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) )
+        { 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error,einval}");
             break;
         }
-
+  
         try {
-            om->destroy(uuid);
+            core->destroy(uuid, type, props);
         }
 
         catch( ... ){
             rc = -EINVAL;
-            gen_cnode_format(resp, "{error, could_not_destroy}");
+            gen_cnode_format(resp, "{error, einval}");
         }
     }
-
+   
     if( !rc ){
-        gen_cnode_format(resp, "ok");
-    } 
-    
+       gen_cnode_format(resp, "ok"); 
+    }
+
     return rc;
 }
 
@@ -305,7 +261,7 @@ GEN_CNODE_DEFINE( setViewport ){
     int rc = 0, idx = 0;
     string uuid = "";
 
-    if( argc != 1 || Ymir::Object::decodeString(args, &idx, &uuid) ){
+    if( argc != 1 || Ymir::decodeString(args, &idx, &uuid) ){
         rc = -EINVAL;
         goto exit;
     }

@@ -82,11 +82,13 @@ namespace Ymir {
         //<<HERE>> This needs to be taken out into a new function.
         //New bootstrap process will be: start, load scenes,
         //activateScene (MyGui comes with this?)
-        /*if( !mActiveScene ){
+        if( !mActiveScene ){
             mActiveScene = root->createSceneManager(ST_GENERIC);
         
             mActiveScene->setAmbientLight(ColourValue(0.5,0.5,0.5));
-        }*/
+
+            scenes.insert(pair<string, Ogre::SceneManager*>("Default", mActiveScene));
+        }
     
         if( !window ){
             window = root->initialise( true, title );
@@ -251,133 +253,53 @@ namespace Ymir {
     }
 
     Ogre::SceneManager* Core::findScene( const string& scene ){
-        std::map<string, Ogre::SceneManager*> it = scenes.find(scene);
+        std::map<std::string, Ogre::SceneManager*>::iterator it = scenes.find(scene);
 
-        if( it == scenes.end() ){
-            return NULL;
-        } else {
-            it->second();
+        if( it != scenes.end() ){
+            return it->second;
         }
+    
+        return NULL;
     }
 
-    void Core::create( const string& sceneID,
-                       const string& objectID, 
+    void Core::create( string& objectID, 
                        Ymir::Object::Type type,
                        Ymir::PropList& props )
     {
-        Ogre::SceneManager* scene = findScene(sceneID);
-        Ymir::ObjectTask task = Ymir::ObjectTask::create(scene, objectID, type, props):
 
-        if( rendering && scene == activeScene ){
-            em->queueTask( task );
-        } else if( scene ){
-            task.run();
-        }
+        if( rendering ){
+            em->queueTask(new Ymir::FactoryTask( FactoryTask::Create,
+                                                 objectID, type, props));
+        } else {
+            Ymir::FactoryTask(FactoryTask::Create, objectID, type, props).run();
+        } 
     }
  
-    void Core::update( const string& sceneID,
-                       const string& objectID, 
+    void Core::update( string& objectID, 
+                       Ymir::Object::Type type,
                        Ymir::PropList& props )
     {
-        Ogre::SceneManager* scene = findScene(sceneID);
-        Ymir::ObjectTask task = Ymir::ObjectTask::update(scene, objectID, props);
 
-        if( rendering && scene == activeScene ){
-            em->queueTask(task);
-        } else if( scene ) { 
-            task.run();
-        }
+        if( rendering ){
+            em->queueTask(new Ymir::FactoryTask( FactoryTask::Update,
+                                                 objectID, type, props));
+        } else {
+            Ymir::FactoryTask(FactoryTask::Update, objectID, type, props).run();
+        } 
     }
     
-    void Core::destroy( const string& sceneID,
-                        const string& objectID )
+    void Core::destroy( std::string& id,
+                        Ymir::Object::Type type, 
+                        Ymir::PropList& props )
     {
-        Ogre::SceneManager* scene = findScene(sceneID);
-        Ymir::ObjectTask task = Ymir::ObjectTask::destroy(scene, objectID);
 
-        if( rendering && scene == activeScene ){
-            em->queueTask(task);
+        if( rendering ){
+            em->queueTask(new Ymir::FactoryTask( FactoryTask::Destroy,
+                                                 id, type, props));
         } else {
-            task.run();  
-        }
+            Ymir::FactoryTask(FactoryTask::Destroy, id, type, props).run();
+        } 
     }
-
-    /*void Core::createActual( const string& scene,
-                             const string& uuid,
-                             Ymir::Object::Type type,
-                             Ymir::PropList& props )
-    {
-        std::map<std::string, Ogre::SceneManager*>::iterator it = scenes.find(scene);
-        Ymir::Object* object = NULL;
-
-        logNormal("CREATE ACTUAL!\n");
-
-        if( it != scenes.end() ){
-            Ymir::ObjectFactory::create<type>(it->second, uuid, props);
-        }
-
-        switch( type ){
-   
-            case Ymir::Object::Scene:
-
-                break;
-
-            case Ymir::Object::Camera:
-                object = new Ymir::Camera(uuid);
-                break;
-
-            case Ymir::Object::Light:
-                object = new Ymir::Light(uuid);
-                break;
-
-            case Ymir::Object::Entity:
-                object = new Ymir::Entity(uuid);
-                break;
-
-            case Ymir::Object::Button:
-                object = new Ymir::Button(uuid);
-                break;
-
-            case Ymir::Object::Window:
-                object = new Ymir::Window(uuid);
-                break;
-                
-            default:
-                logNormal("Invalid object type detected!");
-                return;
-        }
-
-        logNormal("Calling object create!");
-
-        //Tell the object to create itself
-        object->create(props);
-
-        //Add the object to the map of tracked objects
-        objects.insert( std::pair<std::string, Ymir::Object*>(uuid, object) );
-    }
-
-    void Core::updateActual( const string& scene,
-                             const string& uuid,
-                             Ymir::Object::Type type,
-                             Ymir::PropList& props )
-    {
-        std::map<std::string, Ogre::SceneManager*>::iterator it = scenes.find(scene); 
-
-        if( it != objects.end() ){
-            Ymir::ObjectFactory::update(it->second, uuid, props);
-        }
-    }
-
-    void Core::destroyActual( const string& scene,
-                              const string& uuid,
-                              Ymir::Object::Type type,
-                              Ymir::PropList& props ){
-        std::map<std::string, Ogre::SceneManager*>::iterator it = scenes.find(scene);
-
-        if( it != objects.end() ){
-            Ymir::ObjectFactory::destroy(it->second, uuid);
-        }
-    }*/
 
     Ymir::Core* Core::getSingletonPtr( ) {
         if( !core ) {

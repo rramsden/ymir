@@ -25,10 +25,16 @@ clean:
 clobber: clean
 	rm -f $(LIB_TARGETS)
 
+DecodeBasic.o: DecodeBasic.cpp DecodeBasic.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
 OgreEventListener.o: OgreEventListener.cpp OgreEventListener.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 ObjectBlueprint.o: ObjectBlueprint.cpp ObjectBlueprint.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
+OgreBlueprint.o: OgreBlueprint.cpp OgreBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 EntityBlueprint.o: EntityBlueprint.cpp EntityBlueprint.h OgreBlueprint.h
@@ -37,11 +43,13 @@ EntityBlueprint.o: EntityBlueprint.cpp EntityBlueprint.h OgreBlueprint.h
 LightBlueprint.o: LightBlueprint.cpp LightBlueprint.h OgreBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
+CameraBlueprint.o: CameraBlueprint.cpp CameraBlueprint.h NodeBlueprint.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
 ButtonBlueprint.o: ButtonBlueprint.cpp ButtonBlueprint.h MyGUIBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-OgreObject.o: CFLAGS += $(shell pkg-config --cflags OGRE MYGUI)
-OgreObject.o: OgreObject.cpp OgreObject.h
+ObjectFactory.o: ObjectFactory.cpp ObjectFactory.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 Core.o: Core.cpp Core.h
@@ -55,5 +63,5 @@ libymir_core.o: libymir_core.cpp
 
 libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE-Terrain OIS MYGUI)
 libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE OIS MYGUI)
-libymir_core.so: ObjectBlueprint.o EntityBlueprint.o LightBlueprint.o ButtonBlueprint.o OgreEventListener.o Core.o EventManager.o libymir_core.o
+libymir_core.so: DecodeBasic.o ObjectBlueprint.o OgreBlueprint.o EntityBlueprint.o LightBlueprint.o CameraBlueprint.o ButtonBlueprint.o ObjectFactory.o OgreEventListener.o Core.o EventManager.o libymir_core.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -lMyGUI.OgrePlatform -o $@

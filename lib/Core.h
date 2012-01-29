@@ -13,16 +13,16 @@
 //Input System
 #include <OIS/OIS.h>
 
+//Object Types
+#include "ObjectFactory.h"
+
 //Event dispatching support
 #include "OgreEventListener.h"
 #include "EventManager.h"
 
-//Generic Object Support
-//#include "OgreObject.h"
-//#include "MyGUIObject.h"
-
 //Object delegation
 #include "Task.h"
+#include "PropList.h"
 
 using namespace std;
 using namespace Ogre;
@@ -58,17 +58,17 @@ namespace Ymir {
             void renderStop();
    
             //Object management
-            void create( const std::string& scene,
-                         const std::string& uuid, 
-                         Ymir::ObjectType type, 
+            void create( std::string& uuid, 
+                         Ymir::Object::Type type, 
                          Ymir::PropList& props );
 
-            void update( const std::string& scene,
-                         const std::string& uuid, 
+            void update( std::string& uuid, 
+                         Ymir::Object::Type type,
                          Ymir::PropList& actions);
 
-            void destroy( const std::string& scene, 
-                          const std::string& uuid );
+            void destroy( std::string& uuid,
+                          Ymir::Object::Type type, 
+                          Ymir::PropList& props ); 
 
             //Viewport management
             void setViewport( const String& name );
@@ -77,7 +77,7 @@ namespace Ymir {
             void createScene( const std::string& name,
                               Ymir::PropList& props );
 
-            Ogre::SceneManager* findScene( string& );
+            Ogre::SceneManager* findScene( const string& );
             
             void deleteScene( const std::string& name);
             

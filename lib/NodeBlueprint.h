@@ -72,18 +72,18 @@ namespace Ymir {
                 set(&tuple, props);
             }
             
-            virtual void destroy( std::string& id ){
+            virtual void destroy( std::string& id, PropList& props ){
                 boost::any temp;
                 SceneManager* scene = 
                     Ymir::Core::getSingletonPtr()->getActiveScene();
 
-                /*//If a target scene is given, use it instead of the default
+                //If a target scene is given, use it instead of the default
                 if( props.hasProperty("scene", &temp) ){
                     std::string sceneID = boost::any_cast<std::string>(temp);
                     scene = Ymir::Core::getSingletonPtr()->findScene(sceneID);
                 }
 
-                destroyOgreObject(id, scene);*/
+                destroyOgreObject(id, scene);
             }
 
             //Setters

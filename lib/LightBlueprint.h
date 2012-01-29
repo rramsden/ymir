@@ -27,8 +27,8 @@ namespace Ymir {
             Ogre::Light* findOgreObject( std::string& id, 
                                          Ogre::SceneManager* scene);
 
-            void destroyOgrebject( std::string&, 
-                                   Ogre::SceneManager* );
+            void destroyOgreObject( std::string&, 
+                                    Ogre::SceneManager* );
     };
 }
 

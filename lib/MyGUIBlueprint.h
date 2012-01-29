@@ -4,6 +4,7 @@
 #include <MyGUI.h>
 
 #include "ObjectBlueprint.h"
+#include "EventManager.h"
 #include "Core.h"
 
 namespace Ymir {
@@ -16,6 +17,7 @@ namespace Ymir {
             void create( std::string& id, PropList& props ){
                 Ymir::Core* core = Ymir::Core::getSingletonPtr();
                 MyGUI::Gui* gui = MyGUI::Gui::getInstancePtr();
+                EventManager* em = EventManager::getSingletonPtr();
                 MyGUI::IntCoord intCoord; 
                 std::string skin, layer;
                 MyGUI::Align align;
@@ -26,7 +28,7 @@ namespace Ymir {
                     !props.hasProperty<std::string>("layer", &layer) ) 
                 {
                     //<<HERE>> TODO: Throw exception
-                    core->logNormal("Not enough data to create MyGUI Object!"); 
+                    core->logNormal("Not enough data to create MyGUI Object!");
                     return;
                 }
 
@@ -38,6 +40,9 @@ namespace Ymir {
                 T* obj = gui->createWidget<T>(skin, intCoord, align, layer, id);
 
                 set(obj, props);
+
+                //Inform EventManager about the new GUI object
+                em->monitor(obj);
             }
 
             void update( std::string& id, PropList& props ){
@@ -48,7 +53,7 @@ namespace Ymir {
                 set(obj, props);
             } 
 
-            void destroy( std::string& id ){
+            void destroy( std::string& id, PropList& props ){
                 MyGUI::Gui* gui = MyGUI::Gui::getInstancePtr();
 
                 gui->destroyWidget( gui->findWidget<T>(id) );
@@ -86,7 +91,7 @@ namespace Ymir {
                 std::string temp = "";
 
 
-                if( decodeString(data, idx, &temp) ){
+                if( Ymir::decodeString(data, idx, &temp) ){
                     return -EINVAL;
                 }
 
@@ -116,7 +121,11 @@ namespace Ymir {
             }
 
             static void setVisible( T* obj, boost::any& val ){
-               obj->setVisible(boost::any_cast<bool>(val));
+               Ymir::Core* core = Ymir::Core::getSingletonPtr();
+                
+                core->logNormal("Setting visible!!!!!");
+
+                obj->setVisible(boost::any_cast<bool>(val));
             }
 
             static void setCaption( T* obj, boost::any& val){

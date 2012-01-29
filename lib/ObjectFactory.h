@@ -1,114 +1,85 @@
-#ifndef _COREFACTORY_H
-#define _COREFACTORY_H
+#ifndef _OBJECTFACTORY_H
+#define _OBJECTFACTORY_H
 
-//Scene blueprints
-//#include "SceneBlueprint.h"
-//#include "TerrainBlueprint.h"
-#include "CameraBlueprint.h"
-#include "LightBlueprint.h"
-#include "EntityBlueprint.h"
-
-//GUI blueprints
-#include "ButtonBlueprint.h"
-#include "WindowBlueprint.h"
+#include "Task.h"
+#include "PropList.h"
 
 namespace Ymir {
 
-    class CoreFactory {
+    namespace Object {
+        typedef enum {
+            Invalid = 0,
+            Scene,
+            Terrain,
+            Camera,
+            Light, 
+            Entity,
+            Window,
+            Button,
+            Max
+        } Type;
+    }
+
+    class ObjectFactory {
    
         public:
 
+
+
             static int decode( const char* data, 
                                int* idx,
-                               ObjectType& type,
+                               Object::Type type,
                                PropList* props );
 
+            static int decodeObject( const char* data, 
+                                     int* idx,
+                                     std::string* id,
+                                     Object::Type* type,
+                                     PropList* props );
+
             static void create( std::string& objectID,
-                                ObjectType& type,
+                                Object::Type type,
                                 PropList& props );
     
             static void update( std::string& objectID,
-                                ObjectType& type,
-                                PropList& actions );
+                                Object::Type type,
+                                PropList& props );
     
-            static void destroy( ObjectType& type, 
-                                 std::string& objectID );
+            static void destroy( std::string& objectID,
+                                 Object::Type type, 
+                                 PropList& props );
              
         protected:
-            //Ymir::SceneBlueprint mSceneBlueprint;
-            //Ymir::TerrainBlueprint mTerrainBlueprint;
-            Ymir::CameraBlueprint mCameraBlueprint;
-            Ymir::LightBlueprint mLightBlueprint;
-            EntityBlueprint mEntityBlueprint;
-            Ymir::ButtonBlueprint mButtonBlueprint;
-            //Ymir::WindowBlueprint mWindowBlueprint;
-           
+
             ObjectFactory(){};
 
     };
 
-    class ObjectTask : public Task {
+    class FactoryTask : public Task {
 
         public:
             typedef enum {
-                Invalid = 0,
+                INVALID = 0,
                 Create,
                 Update,
                 Destroy,
                 Max
             } Type;
 
-        static ObjectTask create( std::string& objectID,
-                                  Ymir::ObjectType,
-                                  Ymir::PropList& props );
-
-        static ObjectTask update( std::string& objectID, 
-                                  Ymir::ObjectType,
-                                  Ymir::PropList& props );
-
-        static ObjectTask destroy( Ymir::ObjectType, 
-                                   std::string objectID );
-
-        void run(){
-
-            switch( task ){
-                case Ymir::ObjectTask::Create:
-                    
-                    ObjectFactory::create( mObjectID, mObjectType, mProps );
-                    break;
-
-                case Ymir::ObjectTask::Update:
-                    ObjectFactory::update( mObjectID, mObjectType, mProp );
-                    break;
-
-                case Ymir::ObjectTask::Destroy:
-                    ObjectFactory::destroy( mObjectType, mObjectID );
-                    break;
-
-                default:
-                    break;
-            }
-
-        }
+        FactoryTask( Ymir::FactoryTask::Type task, 
+                     std::string& objectID, 
+                     Object::Type objectType,
+                     PropList props);
+        
+        void run();
 
         protected:
 
-        ObjectTask( Ymir::ObjectTask::Type task, 
-                    std::string& objectID, 
-                    Ymir::ObjectType objectType = Ymir::Object::Invalid,
-                    Ymir::PropList props = PropList() ) : mType(task), 
-                                                          mObjectID(objectID), 
-                                                          mObjectType(objectType), 
-                                                          mProps(props){}
-
-
-            Ymir::ObjectTask::Type mType;
-
+            Ymir::FactoryTask::Type mType;
             std::string mObjectID;
-            Ymir::ObjectType mObjectType;
+            Ymir::Object::Type mObjectType;
             Ymir::PropList mProps;
     };
-
 }
 
 #endif

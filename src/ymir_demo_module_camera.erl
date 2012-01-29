@@ -19,7 +19,8 @@ start() ->
     Head = {"Head", "entity", [{"mesh", "ogrehead.mesh"}]},
     Camera = { "Camera", "camera", [{"position", {0.0, 0.0, 80.0}},
                                     {"lookAt", {0.0, 0.0, -300.0}},
-                                    {"nearClip", 5.0}] },
+                                    {"nearClip", 5.0},
+                                    {"fixYaw", true}] },
 
     io:format("Loading objects!!~n"),
     ok = call_worker(create, [Light, Head]),

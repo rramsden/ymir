@@ -30,7 +30,7 @@ Ogre::Entity* EntityBlueprint::findOgreObject( std::string& id,
     return scene->getEntity(id);
 }
 
-void EntityBlueprint::destroyOgrebject( std::string& id, 
+void EntityBlueprint::destroyOgreObject( std::string& id, 
                                         Ogre::SceneManager* scene){
    scene->destroyEntity(id); 
 }
