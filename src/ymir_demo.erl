@@ -76,6 +76,8 @@ init() ->
     ok = call({ymir_core, addEventHandler, []}),
 
 
+    io:format("Node: ~p~n", [node()]),
+
     %%Init mnesia to store set of active demos
     mnesia:create_schema([node()]),    
     mnesia:start(),

@@ -122,6 +122,7 @@ namespace Ymir {
         protected:
 
             NodeBlueprint() : Ymir::OgreBlueprint() {
+
                 mBlueprint.insert( 
                     BPEntry("position", BPFP(&decodeVector3, (setFP)&setPosition)) );
 

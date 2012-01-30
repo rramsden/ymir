@@ -3,9 +3,8 @@
 namespace Ymir {
 
         CameraBlueprint::CameraBlueprint() : NodeBlueprint<Ogre::Camera>() {
-        
-        //Empty inherited node setters
-        mBlueprint.empty();
+       
+        mBlueprint.clear();
 
         mBlueprint.insert( 
             BPEntry("position", BPFP(&decodeVector3, (setFP)&setCameraPosition)) );
@@ -45,6 +44,7 @@ namespace Ymir {
     }
     
     void CameraBlueprint::setCameraMove(NodeTuple<Ogre::Camera>* t, boost::any& diff){
+        
         t->mObject->moveRelative( boost::any_cast<Ogre::Vector3>(diff) );
     }
     
