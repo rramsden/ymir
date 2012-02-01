@@ -28,6 +28,7 @@ using namespace std;
 using namespace Ogre;
 
 namespace Ymir {
+
     class Core : public WindowEventListener 
     {
     
@@ -86,11 +87,14 @@ namespace Ymir {
 
             //Friend doesn't seem to work for blueprints
             //For now these have been declared public
-            Ogre::SceneManager* mScene;
-            Ogre::TerrainGroup* mTerrainGroup;
-            Ogre::TerrainPaging* mTerrainPaging;
-            Ogre::PageManager* mPageManager;
-            Ogre::PagedWorld* mWorld;
+
+            friend class TerrainBlueprint;
+
+            template<class T>
+            friend class NodeBlueprint;
+
+            template<class T>
+            friend class MyGUIBlueprint;
 
         protected:
             Core();
@@ -124,6 +128,12 @@ namespace Ymir {
     
             EventManager* em;
             Ogre::Viewport* viewport;
+
+            Ogre::SceneManager* mScene;
+            Ogre::TerrainGroup* mTerrainGroup;
+            Ogre::TerrainPaging* mTerrainPaging;
+            Ogre::PageManager* mPageManager;
+            Ogre::PagedWorld* mWorld;
             
             static Core* core;
     };

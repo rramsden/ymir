@@ -12,12 +12,6 @@ namespace Ymir {
 
     Core::Core() :
 
-        mScene(NULL),
-        mTerrainGroup(NULL),
-        mTerrainPaging(NULL),
-        mPageManager(NULL),
-        mWorld(NULL),
-
         root(NULL),
         log(NULL),
         
@@ -28,7 +22,14 @@ namespace Ymir {
         rendering(false),
     
         em(NULL),
-        viewport(NULL)
+        viewport(NULL),
+
+        mScene(NULL),
+        mTerrainGroup(NULL),
+        mTerrainPaging(NULL),
+        mPageManager(NULL),
+        mWorld(NULL)
+
     {
     
     }

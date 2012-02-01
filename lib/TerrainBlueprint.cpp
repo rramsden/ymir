@@ -5,8 +5,6 @@
 #include <OgreTerrainPaging.h>
 #include <OgrePagedWorld.h>
 
-#include "Core.h"
-
 using namespace Ogre;
 
 namespace Ymir {
@@ -52,7 +50,7 @@ TerrainBlueprint::TerrainBlueprint() : OgreBlueprint() {
     mBlueprint["maxY"] = BPFP(&decodeLong, NULL);
 }
 
-void createTerrainGroup( Core* core, PropList& props ){
+void TerrainBlueprint::createTerrainGroup( Core* core, PropList& props ){
     SceneManager* sm = core->mScene;
     Terrain::Alignment align;
     uint16 tSize;
@@ -76,7 +74,7 @@ void createTerrainGroup( Core* core, PropList& props ){
 
 }
 
-void createPageManager(Core* core, PropList& props){
+void TerrainBlueprint::createPageManager(Core* core, PropList& props){
     std::string cameraID;
     Ogre::Camera* camera; 
 
@@ -92,7 +90,10 @@ void createPageManager(Core* core, PropList& props){
     core->mPageManager->addCamera(camera);
 }
 
-void createWorld( Core* core, std::string& id, PropList& props ){
+void TerrainBlueprint::createWorld( Core* core, 
+                                    std::string& id, 
+                                    PropList& props )
+{
    long loadRadius, holdRadius;
    long minX = -10, maxX = 10, minY = -10, maxY = 10;
     
