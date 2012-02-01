@@ -1,8 +1,9 @@
 #ifndef _NODEBLUEPRINT
 #define _NODEBLUEPRINT
 
-#include "OgreBlueprint.h"
 #include "Core.h"
+
+#include "OgreBlueprint.h"
 
 using namespace Ogre;
 
@@ -26,14 +27,7 @@ namespace Ymir {
 
             virtual void create( std::string& id, Ymir::PropList& props ){
                 boost::any temp;
-                SceneManager* scene = 
-                    Ymir::Core::getSingletonPtr()->getActiveScene();
-
-                //If a target scene is given, use it instead of the default
-                if( props.hasProperty("scene", &temp) ){
-                    std::string sceneID = boost::any_cast<std::string>(temp);
-                    scene = Ymir::Core::getSingletonPtr()->findScene(sceneID);
-                }
+                SceneManager* scene = Ymir::Core::getSingletonPtr()->mScene;
 
                 //Create the actual object
                 T* obj = createOgreObject(id, props, scene); 
@@ -52,15 +46,8 @@ namespace Ymir {
 
             virtual void update( std::string& id, Ymir::PropList& props ){
                 boost::any temp;
-                SceneManager* scene = 
-                    Ymir::Core::getSingletonPtr()->getActiveScene();
+                SceneManager* scene = Ymir::Core::getSingletonPtr()->mScene;
 
-                //If a target scene is given, use it instead of the default
-                if( props.hasProperty("scene", &temp) ){
-                    std::string sceneID = boost::any_cast<std::string>(temp);
-                    scene = Ymir::Core::getSingletonPtr()->findScene(sceneID);
-                }
-               
                 T* obj = findOgreObject(id, scene);
                 if( !obj ){
                     //<<HERE>> TODO: Throw exception
@@ -74,8 +61,7 @@ namespace Ymir {
             
             virtual void destroy( std::string& id, PropList& props ){
                 boost::any temp;
-                SceneManager* scene = 
-                    Ymir::Core::getSingletonPtr()->getActiveScene();
+                SceneManager* scene = Ymir::Core::getSingletonPtr()->mScene;
 
                 //If a target scene is given, use it instead of the default
                 if( props.hasProperty("scene", &temp) ){
@@ -150,7 +136,6 @@ namespace Ymir {
             virtual T* createOgreObject( std::string&, Ymir::PropList&, SceneManager* ) = 0;
             virtual T* findOgreObject( std::string&, SceneManager* ) = 0;
             virtual void destroyOgreObject( std::string&, SceneManager* ) = 0;
-
     };
 }
 #endif

@@ -37,4 +37,12 @@ namespace Ymir{
     
         return rc;
     }
+
+    int decodeLong(const char* data, int* idx, long* output){
+        return ei_decode_long(data, idx, output);
+    }   
+
+    int decodeULong(const char* data, int* idx, unsigned long* output){
+        return ei_decode_ulong(data, idx, output);
+    }
 }

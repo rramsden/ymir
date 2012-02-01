@@ -58,6 +58,21 @@ namespace Ymir {
         return 0;
     }
 
+    int ObjectBlueprint::decodeULong( const char* data,
+                                      int* idx,
+                                      boost::any* output )
+    {
+        unsigned long temp;
+
+        if( Ymir::decodeULong(data, idx, &temp) ){
+            *output = temp;
+        } else {
+            return -EINVAL;
+        }
+
+        return 0;
+    }
+
     int ObjectBlueprint::decodeString( const char* data, 
                                        int* idx, 
                                        boost::any* output )

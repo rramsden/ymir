@@ -2,7 +2,7 @@
 
 //Scene blueprints
 //#include "SceneBlueprint.h"
-//#include "TerrainBlueprint.h"
+#include "TerrainBlueprint.h"
 #include "CameraBlueprint.h"
 #include "LightBlueprint.h"
 #include "EntityBlueprint.h"
@@ -17,7 +17,7 @@
 namespace Ymir {
 
 //Ymir::SceneBlueprint mSceneBlueprint;
-//Ymir::TerrainBlueprint mTerrainBlueprint;
+static TerrainBlueprint mTerrainBlueprint;
 static CameraBlueprint mCameraBlueprint;
 static LightBlueprint mLightBlueprint;
 static EntityBlueprint mEntityBlueprint;
@@ -34,6 +34,7 @@ int ObjectFactory::decode( const char* data, int* idx, Object::Type type, PropLi
             break;
 
         case Object::Terrain:
+            rc = mTerrainBlueprint.decodePropList(data, idx, props);
             break;
 
         case Object::Camera:
@@ -67,8 +68,10 @@ int decodeType( const char* data, int* idx, Object::Type* output ){
     string type = "";
 
     if( !(rc = decodeString(data, idx, &type)) ){
-        
-        if( type == "camera" ){
+       
+        if( type == "terrain" ){
+            *output = Ymir::Object::Terrain;
+        } else if( type == "camera" ){
             *output = Ymir::Object::Camera;
         } else if( type == "light" ){
             *output = Ymir::Object::Light;
@@ -114,6 +117,7 @@ void ObjectFactory::create( std::string& objectID,
             break;
 
         case Object::Terrain:
+            mTerrainBlueprint.create(objectID, props);
             break;
 
         case Object::Camera:
@@ -150,6 +154,7 @@ void ObjectFactory::update( std::string& objectID,
             break;
 
         case Object::Terrain:
+            mTerrainBlueprint.update(objectID, props);
             break;
 
         case Object::Camera:
@@ -186,6 +191,7 @@ void ObjectFactory::destroy( std::string& objectID,
             break;
 
         case Object::Terrain:
+            mTerrainBlueprint.destroy(objectID, props);
             break;
 
         case Object::Camera:

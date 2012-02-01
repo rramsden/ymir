@@ -12,6 +12,7 @@ namespace Ymir {
         public:
             EntityBlueprint();
             ~EntityBlueprint(){}
+
         protected:
 
             Ogre::Entity* createOgreObject(std::string&,

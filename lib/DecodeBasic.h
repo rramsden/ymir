@@ -15,6 +15,7 @@ namespace Ymir {
     int decodeString( const char* data, int* idx, std::string* output );
     int decodeFloat( const char* data, int* idx, float* output );
     int decodeLong(const char* data, int* idx, long* output);
+    int decodeULong(const char* data, int* idx, unsigned long* output);
     int decodeBool( const char* data, int* idx, bool* output );
 
 

@@ -11,6 +11,13 @@ namespace Ymir {
     Core *Core::core;
 
     Core::Core() :
+
+        mScene(NULL),
+        mTerrainGroup(NULL),
+        mTerrainPaging(NULL),
+        mPageManager(NULL),
+        mWorld(NULL),
+
         root(NULL),
         log(NULL),
         
@@ -21,11 +28,7 @@ namespace Ymir {
         rendering(false),
     
         em(NULL),
-        viewport(NULL),
-        mActiveScene(NULL),
-        mActivePageManager(NULL),
-
-        scenes()
+        viewport(NULL)
     {
     
     }
@@ -82,12 +85,10 @@ namespace Ymir {
         //<<HERE>> This needs to be taken out into a new function.
         //New bootstrap process will be: start, load scenes,
         //activateScene (MyGui comes with this?)
-        if( !mActiveScene ){
-            mActiveScene = root->createSceneManager(ST_GENERIC);
+        if( !mScene ){
+            mScene = root->createSceneManager(ST_GENERIC);
         
-            mActiveScene->setAmbientLight(ColourValue(0.5,0.5,0.5));
-
-            scenes.insert(pair<string, Ogre::SceneManager*>("Default", mActiveScene));
+            mScene->setAmbientLight(ColourValue(0.5,0.5,0.5));
         }
     
         if( !window ){
@@ -149,7 +150,7 @@ namespace Ymir {
         log = NULL;
         platform = NULL;
         gui = NULL;
-        mActiveScene = NULL;
+        mScene = NULL;
         window = NULL;
         em = NULL;
         rendering = false;
@@ -188,7 +189,7 @@ namespace Ymir {
             if( !platform ){
        
                 platform = new OgrePlatform();
-                platform->initialise(window, mActiveScene);
+                platform->initialise(window, mScene);
             }
     
             if( !gui ){
@@ -211,7 +212,7 @@ namespace Ymir {
             //<<HERE>> TODO
         } else {
        
-            temp = mActiveScene->getCamera(name);
+            temp = mScene->getCamera(name);
             if( !temp ){
                 //<<HERE>> TODO
             }
@@ -250,16 +251,6 @@ namespace Ymir {
     
     void Core::renderStop(){
         em->setRendering(false);
-    }
-
-    Ogre::SceneManager* Core::findScene( const string& scene ){
-        std::map<std::string, Ogre::SceneManager*>::iterator it = scenes.find(scene);
-
-        if( it != scenes.end() ){
-            return it->second;
-        }
-    
-        return NULL;
     }
 
     void Core::create( string& objectID, 

@@ -24,6 +24,7 @@ namespace Ymir {
             static int decodeFloat( const char*, int*, boost::any* );
             static int decodeBool( const char*, int*, boost::any* );
             static int decodeLong( const char*, int*, boost::any* );
+            static int decodeULong( const char*, int*, boost::any* );
 
             //Decoder helper function 
             int decodePropList( const char*, 

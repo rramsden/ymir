@@ -74,16 +74,8 @@ namespace Ymir {
             void setViewport( const String& name );
    
             //Scene Management
-            void createScene( const std::string& name,
-                              Ymir::PropList& props );
-
             Ogre::SceneManager* findScene( const string& );
             
-            void deleteScene( const std::string& name);
-            
-            Ogre::SceneManager* getActiveScene(){ return mActiveScene; }
-            void setActiveScene(std::string&);
-
             void destroyAllObjects();
 
             //OGRE hooks
@@ -91,6 +83,15 @@ namespace Ymir {
             void windowClosed(RenderWindow* rw);
    
             static Ymir::Core* getSingletonPtr(); 
+
+            //Friend doesn't seem to work for blueprints
+            //For now these have been declared public
+            Ogre::SceneManager* mScene;
+            Ogre::TerrainGroup* mTerrainGroup;
+            Ogre::TerrainPaging* mTerrainPaging;
+            Ogre::PageManager* mPageManager;
+            Ogre::PagedWorld* mWorld;
+
         protected:
             Core();
 
@@ -124,12 +125,6 @@ namespace Ymir {
             EventManager* em;
             Ogre::Viewport* viewport;
             
-            Ogre::SceneManager* mActiveScene;
-            Ogre::PageManager* mActivePageManager;
-            Ogre::TerrainPaging* mTerrainPaging;
-
-            std::map<std::string, Ogre::SceneManager*> scenes;
-
             static Core* core;
     };
 
