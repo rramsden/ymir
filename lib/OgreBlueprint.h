@@ -24,12 +24,14 @@ namespace Ymir {
             static int decodeColourVal( const char*, int*, Ogre::ColourValue* );
             static int decodeVector3( const char*, int*, Ogre::Vector3* );
             static int decodeVector4( const char*, int*, Ogre::Vector4* );
+            static int decodeUInt16( const char*, int*, Ogre::uint16* );
 
             static int decodeReal( const char*, int*, boost::any* );
             static int decodeRadian( const char*, int*, boost::any* );
             static int decodeColourVal( const char*, int*, boost::any* );
             static int decodeVector3( const char*, int*, boost::any* );
             static int decodeVector4( const char*, int*, boost::any* );
+            static int decodeUInt16( const char*, int*, boost::any* );
 
             protected:
                 

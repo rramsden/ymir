@@ -25,6 +25,8 @@ namespace Ymir {
         viewport(NULL),
 
         mScene(NULL),
+
+        mTerrainGlobals(NULL),
         mTerrainGroup(NULL),
         mTerrainPaging(NULL),
         mPageManager(NULL),

@@ -236,7 +236,7 @@ GEN_CNODE_DEFINE( destroy ){
             ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) )
         { 
             rc = -EINVAL;
-            gen_cnode_format(resp, "{error,einval}");
+            gen_cnode_format(resp, "{error, failed_to_decode}");
             break;
         }
   
@@ -246,7 +246,7 @@ GEN_CNODE_DEFINE( destroy ){
 
         catch( ... ){
             rc = -EINVAL;
-            gen_cnode_format(resp, "{error, einval}");
+            gen_cnode_format(resp, "{error, exception}");
         }
     }
    

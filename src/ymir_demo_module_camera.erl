@@ -28,7 +28,8 @@ start() ->
     ok = call_worker(update, [Camera]). 
 
 stop() ->
-    ok = call_worker(destroy, ["Light", "Head"]).
+    ok = call_worker(destroy, [{"Light", "light", []}, 
+                               {"Head", "entity", []}]).
 
 
 %%%%%% Action Definitions

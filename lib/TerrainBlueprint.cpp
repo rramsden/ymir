@@ -34,7 +34,7 @@ TerrainBlueprint::TerrainBlueprint() : OgreBlueprint() {
 
     //Terrain Group Properties
     mBlueprint["align"] = BPFP(&decodeAlign, NULL);
-    mBlueprint["terrainSize"] = BPFP(&decodeULong, NULL);
+    mBlueprint["terrainSize"] = BPFP(&decodeUInt16, NULL);
     mBlueprint["worldSize"] = BPFP(&decodeReal, NULL);
     mBlueprint["prefix"] = BPFP(&decodeString, NULL);
     mBlueprint["postfix"] = BPFP(&decodeString, NULL);
@@ -76,7 +76,7 @@ void TerrainBlueprint::createTerrainGroup( Core* core, PropList& props ){
 
 void TerrainBlueprint::createPageManager(Core* core, PropList& props){
     std::string cameraID;
-    Ogre::Camera* camera; 
+    Ogre::Camera* camera = NULL; 
 
     if( !props.hasProperty<std::string>("camera", &cameraID) ||
         !(camera = core->mScene->getCamera(cameraID)) )
@@ -94,10 +94,11 @@ void TerrainBlueprint::createWorld( Core* core,
                                     std::string& id, 
                                     PropList& props )
 {
-   long loadRadius, holdRadius;
-   long minX = -10, maxX = 10, minY = -10, maxY = 10;
+   long loadRadius = 2000, holdRadius = 3000;
+   long minX = 0, maxX = 0, minY = 0, maxY = 0;
+   //long minX = -10, maxX = 10, minY = -10, maxY = 10;
     
-   if( !props.hasProperty<long>("loadRadius", &loadRadius) ||
+   /*if( !props.hasProperty<long>("loadRadius", &loadRadius) ||
        !props.hasProperty<long>("holdRadius", &holdRadius) )
    {
         //<<HERE>> TODO: Raise exception
@@ -107,18 +108,56 @@ void TerrainBlueprint::createWorld( Core* core,
    props.hasProperty<long>("minX", &minX);
    props.hasProperty<long>("maxX", &maxX);
    props.hasProperty<long>("minY", &minY);
-   props.hasProperty<long>("maxY", &maxY);
+   props.hasProperty<long>("maxY", &maxY);*/
 
    core->mTerrainPaging->createWorldSection( core->mWorld, core->mTerrainGroup,
                                              loadRadius, holdRadius, 
                                              minX, minY, maxX, maxY, id );
 }
 
+void TerrainBlueprint::configureTerrainGlobals( Core* core, 
+                                                PropList& props )
+{
+    
+    TerrainGlobalOptions* options = core->mTerrainGlobals;
+
+    options->setMaxPixelError(8);
+
+    options->setCompositeMapDistance(3000);
+
+    options->setLightMapDirection(Vector3(0.55, -0.3, 0.75));
+
+    options->setCompositeMapAmbient(ColourValue(0.2, 0.2, 0.2));
+    options->setCompositeMapDiffuse(ColourValue::White);
+
+    Terrain::ImportData& defaultimp = core->mTerrainGroup->getDefaultImportSettings();
+
+    defaultimp.terrainSize = 513;
+    defaultimp.worldSize = 12000.0f;
+    defaultimp.inputScale = 600;
+    defaultimp.minBatchSize = 33;
+    defaultimp.maxBatchSize = 65;
+
+    defaultimp.layerList.resize(3);
+    defaultimp.layerList[0].worldSize = 100;
+    defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");
+    defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_normalheight.dds");
+    defaultimp.layerList[1].worldSize = 30;
+    defaultimp.layerList[1].textureNames.push_back("grass_green-01_diffusespecular.dds");
+    defaultimp.layerList[1].textureNames.push_back("grass_green-01_normalheight.dds");
+    defaultimp.layerList[2].worldSize = 200;
+    defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_diffusespecular.dds");
+    defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_normalheight.dds"); 
+}
+
 void TerrainBlueprint::create(std::string& id, PropList& props){
     Core* core = Core::getSingletonPtr();
-     
+    
+
     //Has a world already been defined? If so, raise an exception
-    if( core->mTerrainGroup ||
+    if( !core->mScene ||
+        core->mTerrainGlobals ||
+        core->mTerrainGroup ||
         core->mTerrainPaging || 
         core->mPageManager ||
         core->mWorld )
@@ -126,15 +165,25 @@ void TerrainBlueprint::create(std::string& id, PropList& props){
         //<<HERE>> TODO: Raise exception
     } 
 
+    MaterialManager::getSingleton().setDefaultTextureFiltering(TFO_ANISOTROPIC);
+    MaterialManager::getSingleton().setDefaultAnisotropy(7);
+
+    //Setup terrain globals
+    core->mTerrainGlobals = OGRE_NEW TerrainGlobalOptions();
+
     //Create the terrain group
     createTerrainGroup(core, props);
+
+    //configureTerrainGlobals(core, props);
 
     //Create page manager
     createPageManager(core, props);
 
     //Init and layout the world 
     core->mTerrainPaging = OGRE_NEW TerrainPaging(core->mPageManager);
+
     core->mWorld = core->mPageManager->createWorld();
+
     createWorld(core, id, props);
 }
 
@@ -145,26 +194,27 @@ void TerrainBlueprint::update(std::string& id, PropList& props){
 void TerrainBlueprint::destroy(std::string& id, PropList& props){
     Core* core = Core::getSingletonPtr();
 
-    if( core->mWorld ){
-        OGRE_DELETE core->mWorld;
+    if( core->mTerrainPaging ){
+        OGRE_DELETE core->mTerrainPaging;
     }
 
     if( core->mPageManager ){
         OGRE_DELETE core->mPageManager;
     }
 
-    if( core->mTerrainPaging ){
-        OGRE_DELETE core->mTerrainPaging;
-    }
-
     if( core->mTerrainGroup ){
         OGRE_DELETE core->mTerrainGroup;
     }
 
-    core->mWorld = NULL;
-    core->mPageManager = NULL;
+    if( core->mTerrainGlobals ){
+        OGRE_DELETE core->mTerrainGlobals;
+    }
+
     core->mTerrainPaging = NULL;
+    core->mPageManager = NULL;
     core->mTerrainGroup = NULL; 
+    core->mWorld = NULL;
+    core->mTerrainGlobals = NULL;
 }
 
 int  TerrainBlueprint::decodeAlign(const char* data, 

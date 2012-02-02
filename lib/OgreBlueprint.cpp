@@ -160,6 +160,18 @@ int OgreBlueprint::decodeVector4( const char* data,
     return 0;
 }
 
+int OgreBlueprint::decodeUInt16( const char* data, int* idx, uint16* output ){
+    long temp;
+
+    if( Ymir::decodeLong(data, idx, &temp) ){
+        return -EINVAL;
+    }
+
+    *output = (uint16)temp;
+
+    return 0;
+}
+
 int OgreBlueprint::decodeReal( const char* data, 
                                int* idx, 
                                boost::any* output )
@@ -225,6 +237,18 @@ int OgreBlueprint::decodeVector4( const char* data, int* idx, boost::any* output
     } else {
         return -EINVAL;
     }
+
+    return 0;
+}
+
+int OgreBlueprint::decodeUInt16( const char* data, int* idx, boost::any* output ){
+    Ogre::uint16 temp;
+
+    if( decodeUInt16(data, idx, &temp) ){
+        return -EINVAL;
+    }
+    
+    *output = temp;
 
     return 0;
 }

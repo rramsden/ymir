@@ -4,6 +4,7 @@
 //OGRE 
 #include <Ogre.h>
 #include <OgreLog.h>
+#include <OgreTerrain.h>
 #include <OgreTerrainPaging.h>
 
 //MyGUI
@@ -85,9 +86,6 @@ namespace Ymir {
    
             static Ymir::Core* getSingletonPtr(); 
 
-            //Friend doesn't seem to work for blueprints
-            //For now these have been declared public
-
             friend class TerrainBlueprint;
 
             template<class T>
@@ -130,6 +128,8 @@ namespace Ymir {
             Ogre::Viewport* viewport;
 
             Ogre::SceneManager* mScene;
+
+            Ogre::TerrainGlobalOptions* mTerrainGlobals;
             Ogre::TerrainGroup* mTerrainGroup;
             Ogre::TerrainPaging* mTerrainPaging;
             Ogre::PageManager* mPageManager;
