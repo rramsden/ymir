@@ -50,10 +50,10 @@ namespace Ymir {
         long temp;
 
         if( Ymir::decodeLong(data, idx, &temp) ){
-           *output = temp; 
-        } else {
-            return -EINVAL;   
-        }
+            return -EINVAL;
+        } 
+        
+        *output = temp;
 
         return 0;
     }
@@ -65,10 +65,10 @@ namespace Ymir {
         unsigned long temp;
 
         if( Ymir::decodeULong(data, idx, &temp) ){
-            *output = temp;
-        } else {
             return -EINVAL;
-        }
+        } 
+        
+        *output = temp;
 
         return 0;
     }
@@ -149,13 +149,12 @@ namespace Ymir {
             //If the entry and its decode function are defined 
             //then call the decodeFP. Otherwise, error.
             if( ((it = mBlueprint.find(prop)) != mBlueprint.end()) && 
-                it->second.first )
+                it->second.first &&
+                it->second.first(data, idx, &val) )
             {
-                it->second.first(data, idx, &val);
-            } else {
                 return -EINVAL;
             }
-
+            
             //Add the entry to the output
             output->insert(PropListEntry(prop, val));
         }

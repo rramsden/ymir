@@ -3,20 +3,23 @@
 -behaviour(gen_event).
 
 -export([init/1, handle_event/2, handle_info/2, 
-         handle_call/2, terminate/2, add_actions/2]).
+         handle_call/2, terminate/2, set_actions/2, add_actions/2]).
 
 -include("event_state.hrl").
 
 init(Actions) when is_list(Actions) ->
     {ok, #eventState{actions = dict:from_list(Actions)} }.
 
-add_actions( Actions, State ) when is_list(Actions),
+set_actions( Actions, State ) when is_list(Actions),
                                    is_record(State, eventState) ->
     
-    State#eventState{ actions = 
-        dict:merge( fun(_K, V1, _V2) -> V1 end,
-                    State#eventState.actions,
-                    dict:from_list(Actions)) }.                                   
+    State#eventState{ actions = dict:from_list(Actions) }.
+
+add_actions( Actions, State ) when is_list(Actions),
+                              is_record(State, eventState) ->
+    State#eventState{ actions = dict:merge( fun(_K, _V1, V2) -> V2 end,
+                                            State#eventState.actions,
+                                            dict:from_list(Actions))}.
 %Events
 %{keyPressed, X}
 %{keyReleased, X}
@@ -224,6 +227,9 @@ handle_event( Event, State )->
     {ok, State}.
 
 %%Add/remove actions
+handle_call({set_actions, Actions}, State) when is_list(Actions) ->
+    {ok, ok, set_actions(Actions, State)};
+
 handle_call({add_actions, Actions}, State) when is_list(Actions) ->
     {ok, ok, add_actions(Actions, State)};
 

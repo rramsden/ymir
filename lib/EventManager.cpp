@@ -12,6 +12,7 @@ namespace Ymir {
         mMouse( 0 ),
         mKeyboard( 0 ),
         mInputSystem( 0 ),
+        mLock(),
         mTasks(),
         mEventListeners(),
         itTask(),
@@ -141,8 +142,10 @@ namespace Ymir {
     }
     
     void EventManager::queueTask( Ymir::Task* task ){
-    
+   
+        mLock.lock();
         mTasks.push_back(task);
+        mLock.unlock();
     }
     
     void EventManager::addEventListener( EventListener *eventListener, const std::string& instanceName ){
@@ -374,15 +377,16 @@ namespace Ymir {
      
         this->capture();
     
-        //Perform some amount from our tasks list
+        //Perform the tasks in our queue
+        mLock.lock();
         itTask = mTasks.begin();
         itTaskEnd = mTasks.end();
         for(; itTask != itTaskEnd; ++itTask){
            (*itTask)->run();
         }
    
-    
         mTasks.clear();
+        mLock.unlock();
 
         itEventListener    = mEventListeners.begin();
         itEventListenerEnd = mEventListeners.end();

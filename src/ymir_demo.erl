@@ -123,20 +123,26 @@ show_main_menu(Module, State) ->
 
     Module:stop(),
 
-    F = fun(D, A) -> 
-        ok = call_worker({ymir_core, update, [ {D#demo.title, "button", [{"visible", true}]} ]}),
-        A        
+    F = fun(D, {Updates, Actions}) -> 
+  
+        { Updates ++ [{D#demo.title, "button", [{"visible", true}]}],
+          Actions ++ [{{guiMouseButtonClick, D#demo.title},
+              fun(S) -> ymir_demo:demo_start(D#demo.module, S) end}] }       
     end,
 
-    %%Hide every loaded demo's GUI button
-    {atomic, ok} = mnesia:transaction( fun() -> mnesia:foldl(F, ok, demo) end ),
+    {atomic, {Updates, Actions}} = mnesia:transaction( fun() -> mnesia:foldl(F, {[],[]}, demo) end ),
 
-    State.
+
+    %%Send word to ymir_core to make the buttons visible again
+    ok = call_worker({ymir_core, update, Updates}),
+
+    %%Clear left over actions and restore to original controls
+    State#eventState{actions = 
+        dict:from_list([{{keyDown, ?KC_ESCAPE}, fun(S) -> ymir_demo:stop(S) end}] ++ Actions)}.
 
 hide_main_menu() ->
     F = fun(D, A) -> 
         ok = call_worker({ymir_core, update, [ {D#demo.title, "button", [{"visible", false}]} ]}),
-        io:format("Hiding button: ~p~n", [D#demo.title]), 
         A        
     end,
 
@@ -151,5 +157,5 @@ demo_start(Module, State) when is_atom(Module) ->
     ok = Module:start(),
 
     %% Q key returns to menu menu
-    ymir_demo_event_manager:add_actions( [{{keyDown, ?KC_Q}, fun(S) -> show_main_menu(Module, S) end }] ++
+    ymir_demo_event_manager:set_actions( [{{keyDown, ?KC_Q}, fun(S) -> show_main_menu(Module, S) end }] ++
                                          Module:actions(), State ).

@@ -5,6 +5,8 @@
 #include <MyGUI.h>
 #include <OgreRenderWindow.h>
 
+#include <boost/thread/mutex.hpp>
+
 #include "Task.h"
 #include "EventListener.h"
 
@@ -98,7 +100,8 @@ namespace Ymir {
         OIS::Mouse        *mMouse;
         OIS::Keyboard     *mKeyboard;
         OIS::InputManager *mInputSystem;
-    
+   
+        boost::mutex mLock;
         std::vector<Ymir::Task*> mTasks; 
         /*std::vector<OIS::JoyStick*> mJoysticks;
         std::vector<OIS::JoyStick*>::iterator itJoystick;

@@ -95,10 +95,10 @@ void TerrainBlueprint::createWorld( Core* core,
                                     PropList& props )
 {
    long loadRadius = 2000, holdRadius = 3000;
-   long minX = 0, maxX = 0, minY = 0, maxY = 0;
-   //long minX = -10, maxX = 10, minY = -10, maxY = 10;
+   //long minX = 0, maxX = 0, minY = 0, maxY = 0;
+   long minX = -10, maxX = 10, minY = -10, maxY = 10;
     
-   /*if( !props.hasProperty<long>("loadRadius", &loadRadius) ||
+   if( !props.hasProperty<long>("loadRadius", &loadRadius) ||
        !props.hasProperty<long>("holdRadius", &holdRadius) )
    {
         //<<HERE>> TODO: Raise exception
@@ -108,7 +108,7 @@ void TerrainBlueprint::createWorld( Core* core,
    props.hasProperty<long>("minX", &minX);
    props.hasProperty<long>("maxX", &maxX);
    props.hasProperty<long>("minY", &minY);
-   props.hasProperty<long>("maxY", &maxY);*/
+   props.hasProperty<long>("maxY", &maxY);
 
    core->mTerrainPaging->createWorldSection( core->mWorld, core->mTerrainGroup,
                                              loadRadius, holdRadius, 
