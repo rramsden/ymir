@@ -28,7 +28,7 @@ init([]) ->
                 {   ogre_manager,
                     {gen_cnode, start_link, [[{name, ogre_manager}, 
                                               {port, 30000}, 
-                                              {workers, 2},
+                                              {workers, 0},
                                               {event_manager, event_manager} ]]},
                     permanent, 
                     1000,

@@ -25,6 +25,9 @@
 #include "Task.h"
 #include "PropList.h"
 
+//Thread Sync
+#include <boost/thread/mutex.hpp>
+
 using namespace std;
 using namespace Ogre;
 
@@ -56,9 +59,8 @@ namespace Ymir {
             void addEventListener(OgreEventListener* event);
     
             //Setup and tear down of input and rendering
-            int renderStart();
-            void renderStop();
-   
+            int ticktock();
+
             //Object management
             void create( std::string& uuid, 
                          Ymir::Object::Type type, 
@@ -100,21 +102,8 @@ namespace Ymir {
             void setupInputDevices();
             void loadResources();
 
-            /*void createActual( const string& scene,
-                               const string& uuid,
-                               Ymir::Object::Type type,
-                               Ymir::PropList& props );
+            boost::mutex mLock; 
 
-            void updateActual( const string& scene,
-                               const string& uuid,
-                               Ymir::Object::Type type,
-                               Ymir::PropList& props );
-            
-            void destroyActual( const string& scene,
-                                const string& uuid,
-                                Ymir::Object::Type type,
-                                Ymir::PropList& props );*/
-            
             Ogre::Root* root;
             Ogre::Log* log;
             
@@ -127,14 +116,25 @@ namespace Ymir {
             EventManager* em;
             Ogre::Viewport* viewport;
 
+            //Active Scene
             Ogre::SceneManager* mScene;
 
+            //Active Terrain 
             Ogre::TerrainGlobalOptions* mTerrainGlobals;
             Ogre::TerrainGroup* mTerrainGroup;
             Ogre::TerrainPaging* mTerrainPaging;
             Ogre::PageManager* mPageManager;
             Ogre::PagedWorld* mWorld;
             
+            //Physics for active scene
+            /*
+             btBroadphaseInterface* mBroadface;
+             btDefaultCollionConfiguration* mCollisionConfig;
+             btCollisionDispatcher* mCollisionDispatcher;
+             btSequentialImpulseConstraintSovler* mConstraintSolver;
+             btDiscreteDynamicsWorld* mDynamicWorld;
+            */ 
+
             static Core* core;
     };
 

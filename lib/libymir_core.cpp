@@ -283,7 +283,19 @@ GEN_CNODE_DEFINE( addEventHandler ){
     return 0;
 }
 
-GEN_CNODE_DEFINE(renderStart){
+GEN_CNODE_DEFINE(ticktock){
+    int time = 0;
+
+    if( (time = ((Core*)state)->ticktock()) < 0 ){
+        gen_cnode_format(resp, "{error, failed}");      
+        return -EINVAL;
+    }
+
+    gen_cnode_format(resp, "{ok, ~i}", time);
+    return 0;
+}
+
+/*GEN_CNODE_DEFINE(renderStart){
     int rc = 0;
 
     //Open the render window
@@ -303,5 +315,5 @@ GEN_CNODE_DEFINE(renderStop){
     ((Core*)state)->renderStop();
     gen_cnode_format(resp, "ok");
     return 0;
-}
+}*/
 }

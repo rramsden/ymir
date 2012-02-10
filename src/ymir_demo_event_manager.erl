@@ -151,14 +151,14 @@ process_action(Something, _Val, State) ->
     io:format("What?  ~p~n", [Something]),
     State.
         
-handle_event(frameStarted, State) ->
-    F = fun(K, V, A) -> process_action(K, V, A) end,
-
-    Temp = dict:fold(F, State, State#eventState.actions),
-
-    %%Process the list of actions, calling every
-    %%action whose prerequisites have been met.
-    {ok, Temp#eventState{mouse = dict:store(moved, false, Temp#eventState.mouse)} };
+%%handle_event(frameStarted, State) ->
+%%    F = fun(K, V, A) -> process_action(K, V, A) end,
+%%
+%%    Temp = dict:fold(F, State, State#eventState.actions),
+%%
+%%    %%Process the list of actions, calling every
+%%    %%action whose prerequisites have been met.
+%%    {ok, Temp#eventState{mouse = dict:store(moved, false, Temp#eventState.mouse)} };
 
 handle_event({keyPressed, Key}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,
@@ -222,8 +222,20 @@ handle_event({guiMouseButtonClick, ID}, State ) ->
                                             true,
                                             State#eventState.gui) }};
 
+handle_event(ticktock, State) ->
+    F = fun(K, V, A) -> process_action(K, V, A) end,
+
+    Temp = dict:fold(F, State, State#eventState.actions),
+
+    %%Instruct C side to render a single frame
+    gen_server:call(ymir_demo, {core, {ticktock, []}}),
+
+    %%Process the list of actions, calling every
+    %%action whose prerequisites have been met.
+    {ok, Temp#eventState{mouse = dict:store(moved, false, Temp#eventState.mouse)} };
+
 handle_event( Event, State )->
-    io:format("Got Event! ~p~n", [Event]),
+    io:format("Event: ~p~n", [Event]),
     {ok, State}.
 
 %%Add/remove actions

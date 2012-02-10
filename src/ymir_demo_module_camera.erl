@@ -6,9 +6,6 @@
 
 -export([title/0, description/0, actions/0, start/0, stop/0]).
 
-call_worker( Func, Args ) ->
-    gen_server:call(ogre_manager, {worker, ymir_core, Func, Args}).
-
 title() -> "Camera Demo".
 description() -> "Free motion camera demo.".
 actions() -> [{frameStarted, fun(S) -> move(S) end}].
@@ -23,13 +20,13 @@ start() ->
                                     {"fixYaw", true}] },
 
     io:format("Loading objects!!~n"),
-    ok = call_worker(create, [Light, Head]),
 
-    ok = call_worker(update, [Camera]). 
+    ymir_demo:core_call({create, [Light, Head]}),
+    ymir_demo:core_call({update, [Camera]}). 
 
 stop() ->
-    ok = call_worker(destroy, [{"Light", "light", []}, 
-                               {"Head", "entity", []}]).
+    ymir_demo:core_call({destroy, [{"Light", "light", []}, 
+                                   {"Head", "entity", []}]}).
 
 
 %%%%%% Action Definitions
@@ -77,13 +74,11 @@ move(State) when is_record(State, eventState) ->
                 %%{atomic, Camera}  = update_camera( "Camera", Updates ),
 
                 %%Tell OgreManager about the updated object
-                ok = gen_server:call(ogre_manager, { worker, 
-                                                     'ymir_core', 
-                                                     update,
-                                                     [{"Camera", 
-                                                       "camera",
-                                                       Updates
-                                                    }]} );
+                gen_server:call(ymir_demo, {core, { update,
+                                                    [{"Camera", 
+                                                      "camera",
+                                                      Updates
+                                                     }]}} );
             _Else ->
                 ok
 

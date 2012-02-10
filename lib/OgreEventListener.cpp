@@ -76,7 +76,7 @@ bool OgreEventListener::mouseReleased( const MouseEvent& e, MouseButtonID id ){
 
 bool OgreEventListener::frameStarted( const FrameEvent& evt ) {
     
-    gen_cnode_notify("frameStarted", NULL);
+    //gen_cnode_notify("frameStarted", NULL);
     return true;
 }
 

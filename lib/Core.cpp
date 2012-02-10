@@ -12,6 +12,7 @@ namespace Ymir {
 
     Core::Core() :
 
+        mLock(),
         root(NULL),
         log(NULL),
         
@@ -31,6 +32,13 @@ namespace Ymir {
         mTerrainPaging(NULL),
         mPageManager(NULL),
         mWorld(NULL)
+
+        /*,
+        mBroadface(NULL),
+        mCollisionConfig(NULL),
+        mCollisionDispatch(NULL),
+        mContraintSolver(NULL),
+        mDynamicsWorld(NULL)*/
 
     {
     
@@ -84,7 +92,7 @@ namespace Ymir {
     		rc = -ENOTSUP;
             goto start_exit;
         }
-    
+  
         //<<HERE>> This needs to be taken out into a new function.
         //New bootstrap process will be: start, load scenes,
         //activateScene (MyGui comes with this?)
@@ -97,7 +105,9 @@ namespace Ymir {
         if( !window ){
             window = root->initialise( true, title );
         }
-    
+   
+        root->getRenderSystem()->_initRenderTargets();
+
         //Capture input on main window
         logNormal("Initializing Event Subsystem...");
         if( !em ){
@@ -120,10 +130,6 @@ namespace Ymir {
     }
     
     void Core::stop(){
-
-        if( rendering ){      
-            renderStop();
-        }
 
         if( root ){
             root->shutdown();
@@ -233,40 +239,28 @@ namespace Ymir {
         rendering = false;
     }
     
-    int Core::renderStart(){
-        int rc = 0;
-    
-        if( !root ){
-            rc = -EINVAL;
-    		goto exit;
+    int Core::ticktock(){
+
+
+        if( !root || !window ){
+            return -EINVAL;
+            
         }
-    
-        rendering = true;
-        window->setVisible(true);
-    
-        root->startRendering();
-    
-        rendering = false;
-    
-        exit:
-        return rc;
+
+        Ogre::Timer timer;
+        Ogre::WindowEventUtilities::messagePump();  
+        root->renderOneFrame();
+       
+        return timer.getMilliseconds();
     }
     
-    void Core::renderStop(){
-        em->setRendering(false);
-    }
 
     void Core::create( string& objectID, 
                        Ymir::Object::Type type,
                        Ymir::PropList& props )
     {
 
-        if( rendering ){
-            em->queueTask(new Ymir::FactoryTask( FactoryTask::Create,
-                                                 objectID, type, props));
-        } else {
-            Ymir::FactoryTask(FactoryTask::Create, objectID, type, props).run();
-        } 
+        ObjectFactory::create(objectID, type, props);
     }
  
     void Core::update( string& objectID, 
@@ -274,25 +268,14 @@ namespace Ymir {
                        Ymir::PropList& props )
     {
 
-        if( rendering ){
-            em->queueTask(new Ymir::FactoryTask( FactoryTask::Update,
-                                                 objectID, type, props));
-        } else {
-            Ymir::FactoryTask(FactoryTask::Update, objectID, type, props).run();
-        } 
+        ObjectFactory::update(objectID, type, props);
     }
     
     void Core::destroy( std::string& id,
                         Ymir::Object::Type type, 
                         Ymir::PropList& props )
     {
-
-        if( rendering ){
-            em->queueTask(new Ymir::FactoryTask( FactoryTask::Destroy,
-                                                 id, type, props));
-        } else {
-            Ymir::FactoryTask(FactoryTask::Destroy, id, type, props).run();
-        } 
+        ObjectFactory::destroy(id, type, props);
     }
 
     Ymir::Core* Core::getSingletonPtr( ) {

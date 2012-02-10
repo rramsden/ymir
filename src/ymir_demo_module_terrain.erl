@@ -6,9 +6,6 @@
 
 -export([title/0, description/0, actions/0, start/0, stop/0]).
 
-call_worker( Func, Args ) ->
-    gen_server:call(ogre_manager, {worker, ymir_core, Func, Args}).
-
 title() -> "Terrain Demo".
 description() -> "Simple terrain with paging".
 actions() -> [{frameStarted, fun(S) -> move(S) end}].
@@ -25,17 +22,17 @@ start() ->
                                        {"minY", 0}, {"maxY", 0},
                                        {"minX", 0}, {"maxX", 0} ]},
 
-    ok = call_worker(update, [{"Camera", "camera", [{"position", {1683.0, 50.0, 2116.0}},
-                                                    {"lookAt", {1963.0, 50.0, 1660.0}},
-                                                    {"nearClip", 0.01},
-                                                    {"farClip", 50000.0}]}] ),
+    ymir_demo:core_call({update, 
+                       [{"Camera", "camera", [{"position", {1683.0, 50.0, 2116.0}},
+                                              {"lookAt", {1963.0, 50.0, 1660.0}},
+                                              {"nearClip", 0.01},
+                                              {"farClip", 50000.0}]}]} ),
 
-    ok = call_worker(create, [Terrain]).
+    ymir_demo:core_call({create, [Terrain]}).
 
 
 stop() -> 
-    ok = call_worker(destroy, [{"Terrain", "terrain", []}]).
-
+    ymir_demo:core_call({destroy, [{"Terrain", "terrain", []}]}).
 
 %%%%%% Action Definitions
 mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
@@ -80,14 +77,11 @@ move(State) when is_record(State, eventState) ->
                 %io:format("Updates: ~p~n", [Updates]),
                 %%{atomic, Camera}  = update_camera( "Camera", Updates ),
 
-                %%Tell OgreManager about the updated object
-                ok = gen_server:call(ogre_manager, { worker, 
-                                                     'ymir_core', 
-                                                     update,
-                                                     [{"Camera", 
-                                                       "camera",
-                                                       Updates
-                                                    }]} );
+                gen_server:call(ymir_demo, {core, { update,
+                                                    [{"Camera", 
+                                                      "camera",
+                                                      Updates
+                                                    }]}} );
             _Else ->
                 ok
 
