@@ -105,30 +105,29 @@ namespace Ymir {
                 t->mNode->lookAt(boost::any_cast<Vector3>(look), Ogre::Node::TS_WORLD);
             }
 
+            static void setScale(NodeTuple<T>* t, boost::any& scale){
+                t->mNode->setScale(boost::any_cast<Vector3>(scale));
+            }
+
+            static void setOrientation(NodeTuple<T>* t, boost::any& orient){
+                Ogre::Vector4 temp = boost::any_cast<Ogre::Vector4>(orient);
+
+                t->mNode->setOrientation(temp.w, temp.x, temp.y, temp.z);
+            }
+
         protected:
 
             NodeBlueprint() : Ymir::OgreBlueprint() {
 
-                mBlueprint.insert( 
-                    BPEntry("position", BPFP(&decodeVector3, (setFP)&setPosition)) );
-
-                mBlueprint.insert(
-                    BPEntry("move", BPFP(&decodeVector3, (setFP)&setMove)));
-
-                mBlueprint.insert(
-                    BPEntry("direction", BPFP(&decodeVector3, (setFP)&setDirection)) );
-                
-                mBlueprint.insert(
-                    BPEntry("yaw", BPFP(&decodeRadian, (setFP)&setYaw)) );
-
-                mBlueprint.insert(
-                    BPEntry("pitch", BPFP(&decodeRadian, (setFP)&setPitch)) );
-
-                mBlueprint.insert(
-                    BPEntry("roll", BPFP(&decodeRadian, (setFP)&setRoll)) );
-
-                mBlueprint.insert(
-                    BPEntry("lookAt", BPFP(&decodeVector3, (setFP)&setLookAt)) );
+                mBlueprint["position"] = BPFP(&decodeVector3, (setFP)&setPosition);
+                mBlueprint["move"] = BPFP(&decodeVector3, (setFP)&setMove);
+                mBlueprint["direction"] = BPFP(&decodeVector3, (setFP)&setDirection);
+                mBlueprint["yaw"] = BPFP(&decodeRadian, (setFP)&setYaw);
+                mBlueprint["pitch"] = BPFP(&decodeRadian, (setFP)&setPitch);
+                mBlueprint["roll"] = BPFP(&decodeRadian, (setFP)&setRoll);
+                mBlueprint["lookAt"] = BPFP(&decodeVector3, (setFP)&setLookAt);
+                mBlueprint["scale"] = BPFP(&decodeVector3, (setFP)&setScale);
+                mBlueprint["orientation"] = BPFP(&decodeVector4, (setFP)&setOrientation);
             }
 
            ~NodeBlueprint(){} 
