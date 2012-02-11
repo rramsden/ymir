@@ -253,7 +253,7 @@ init(State) ->
     process_flag( trap_exit, true ),
 
     ok = gen_server:call(ogre_manager, {load, ymir_core}),
-   
+  
     ok = core_call({start, [ "Ymir Demo",
                              "./plugins.cfg",
                              "./ogre.cfg",
@@ -297,11 +297,12 @@ load_modules() ->
     io:format("Node: ~p~n", [node()]),
 
     %%Init mnesia to store set of active demos
-    mnesia:create_schema([node()]),    
+    mnesia:create_schema([node()]), 
     mnesia:start(),
     mnesia:create_table(demo, [{attributes, record_info(fields, demo)}]),
 
     Files = filelib:wildcard("./ebin/ymir_demo_module_*.beam"),
+
     lists:foldl( fun(M, A) -> load_demo(M, A) end, 
                  {[], {10, 10, 300, 26}},
                  Files).

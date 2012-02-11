@@ -34,7 +34,7 @@ int EntityBlueprint::decodePrefabType( const char* data,
     return 0;
 }
 
-void setMaterial( NodeTuple<Ogre::Entity>* t, boost::any& mat ){
+void EntityBlueprint::setMaterial( NodeTuple<Ogre::Entity>* t, boost::any& mat ){
     t->mObject->setMaterialName(boost::any_cast<std::string>(mat));
 }
 
