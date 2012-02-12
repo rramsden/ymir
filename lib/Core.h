@@ -14,6 +14,9 @@
 //Input System
 #include <OIS/OIS.h>
 
+//Physics subsystem
+#include <btBulletDynamicsCommon.h>
+ 
 //Object Types
 #include "ObjectFactory.h"
 
@@ -119,7 +122,7 @@ namespace Ymir {
             //Active Scene
             Ogre::SceneManager* mScene;
 
-            //Active Terrain 
+            //Terrain for active scene 
             Ogre::TerrainGlobalOptions* mTerrainGlobals;
             Ogre::TerrainGroup* mTerrainGroup;
             Ogre::TerrainPaging* mTerrainPaging;
@@ -127,13 +130,11 @@ namespace Ymir {
             Ogre::PagedWorld* mWorld;
             
             //Physics for active scene
-            /*
-             btBroadphaseInterface* mBroadface;
-             btDefaultCollionConfiguration* mCollisionConfig;
-             btCollisionDispatcher* mCollisionDispatcher;
-             btSequentialImpulseConstraintSovler* mConstraintSolver;
-             btDiscreteDynamicsWorld* mDynamicWorld;
-            */ 
+            btBroadphaseInterface* mBroadface;
+            btDefaultCollisionConfiguration* mCollisionConfig;
+            btCollisionDispatcher* mCollisionDispatcher;
+            btSequentialImpulseConstraintSolver* mConstraintSolver;
+            btDiscreteDynamicsWorld* mDynamicsWorld;
 
             static Core* core;
     };

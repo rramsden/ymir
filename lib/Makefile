@@ -64,7 +64,7 @@ EventManager.o: EventManager.cpp EventManager.h
 libymir_core.o: libymir_core.cpp
 	$(CPP) -c -o $@ $(CFLAGS) $< 
 
-libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE-Terrain OIS MYGUI)
-libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE-Terrain OIS MYGUI)
+libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE-Terrain OIS bullet MYGUI)
+libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE-Terrain OIS bullet MYGUI)
 libymir_core.so: DecodeBasic.o ObjectBlueprint.o OgreBlueprint.o EntityBlueprint.o LightBlueprint.o CameraBlueprint.o TerrainBlueprint.o ButtonBlueprint.o ObjectFactory.o OgreEventListener.o Core.o EventManager.o libymir_core.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -lMyGUI.OgrePlatform -o $@

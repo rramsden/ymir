@@ -31,14 +31,13 @@ namespace Ymir {
         mTerrainGroup(NULL),
         mTerrainPaging(NULL),
         mPageManager(NULL),
-        mWorld(NULL)
+        mWorld(NULL),
 
-        /*,
         mBroadface(NULL),
         mCollisionConfig(NULL),
-        mCollisionDispatch(NULL),
-        mContraintSolver(NULL),
-        mDynamicsWorld(NULL)*/
+        mCollisionDispatcher(NULL),
+        mConstraintSolver(NULL),
+        mDynamicsWorld(NULL)
 
     {
     

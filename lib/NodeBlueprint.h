@@ -1,8 +1,9 @@
 #ifndef _NODEBLUEPRINT
 #define _NODEBLUEPRINT
 
-#include "Core.h"
+#include <LinearMath/btMotionState.h>
 
+#include "Core.h"
 #include "OgreBlueprint.h"
 
 using namespace Ogre;
@@ -21,7 +22,7 @@ namespace Ymir {
     };
     
     template<class T>
-    class NodeBlueprint : public OgreBlueprint {
+    class NodeBlueprint : public OgreBlueprint, public btMotionState {
 
         public:
 
@@ -114,6 +115,11 @@ namespace Ymir {
 
                 t->mNode->setOrientation(temp.w, temp.x, temp.y, temp.z);
             }
+
+
+            //Bullet physics interface
+            virtual void getWorldTransform(btTransform& worldTrans) const{}
+            virtual void setWorldTransform(const btTransform& worldTrans){}
 
         protected:
 
