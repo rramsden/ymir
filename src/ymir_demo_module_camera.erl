@@ -11,6 +11,8 @@ description() -> "Free motion camera demo.".
 actions() -> [{frameStarted, fun(S) -> move(S) end}].
 start() ->
      %%Generate some objects
+    
+     
     Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
                                  {"source", "point"} ]},
     Head = {"Head", "entity", [{"mesh", "ogrehead.mesh"}]},
@@ -19,15 +21,16 @@ start() ->
                                     {"nearClip", 5.0},
                                     {"fixYaw", true}] },
 
+    Scene = {title(), "scene", [{"ambient", {0.5, 0.5, 0.5, 1.0}},
+                                {"viewport", "Camera"},
+                                {"objects", [Light, Head, Camera]}]},
+    
     io:format("Loading objects!!~n"),
 
-    ymir_demo:core_call({create, [Light, Head]}),
-    ymir_demo:core_call({update, [Camera]}). 
+    ymir_demo:core_call({create, [Scene]}).
 
 stop() ->
-    ymir_demo:core_call({destroy, [{"Light", "light", []}, 
-                                   {"Head", "entity", []}]}).
-
+    ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 %%%%%% Action Definitions
 

@@ -1,7 +1,7 @@
 #include "ObjectFactory.h"
 
 //Scene blueprints
-//#include "SceneBlueprint.h"
+#include "SceneBlueprint.h"
 #include "TerrainBlueprint.h"
 #include "CameraBlueprint.h"
 #include "LightBlueprint.h"
@@ -16,7 +16,7 @@
 
 namespace Ymir {
 
-//Ymir::SceneBlueprint mSceneBlueprint;
+static SceneBlueprint mSceneBlueprint;
 static TerrainBlueprint mTerrainBlueprint;
 static CameraBlueprint mCameraBlueprint;
 static LightBlueprint mLightBlueprint;
@@ -27,10 +27,11 @@ static ButtonBlueprint mButtonBlueprint;
 int ObjectFactory::decode( const char* data, int* idx, Object::Type type, PropList* props )
 {
     int rc = 0;
-    
+   
     switch(type){
 
         case Object::Scene:
+            rc = mSceneBlueprint.decodePropList(data, idx, props);
             break;
 
         case Object::Terrain:
@@ -69,7 +70,9 @@ int decodeType( const char* data, int* idx, Object::Type* output ){
 
     if( !(rc = decodeString(data, idx, &type)) ){
        
-        if( type == "terrain" ){
+        if( type == "scene" ){
+            *output = Ymir::Object::Scene;
+        } else if( type == "terrain" ){
             *output = Ymir::Object::Terrain;
         } else if( type == "camera" ){
             *output = Ymir::Object::Camera;
@@ -84,8 +87,8 @@ int decodeType( const char* data, int* idx, Object::Type* output ){
         } else {
             *output = Ymir::Object::Invalid;
         }
-    }
-
+    } 
+    
     return rc;
 }
 
@@ -95,6 +98,13 @@ int ObjectFactory::decodeObject( const char* data,
                                  Object::Type* type,
                                  PropList* props )
 {
+    int arity = 0;
+
+    if( ei_decode_tuple_header(data, idx, &arity) || 
+       (arity != 3) )
+    { 
+        return -EINVAL;
+    }
 
     if( decodeString(data, idx, uuid) ||
         decodeType(data, idx, type) ||
@@ -107,6 +117,23 @@ int ObjectFactory::decodeObject( const char* data,
     return decode( data, idx, *type, props );
 }
 
+int ObjectFactory::decodeObject( const char* data, 
+                                 int* idx,
+                                 Object* obj )
+{
+    std::string id;
+    Object::Type type;
+    PropList props;
+
+    if( decodeObject(data, idx, &id, &type, &props) ){
+        return -EINVAL;
+    }
+
+    *obj = Object(id, type, props);
+
+    return 0;
+}   
+
 void ObjectFactory::create( std::string& objectID,
                             Ymir::Object::Type type,
                             Ymir::PropList& props )
@@ -114,6 +141,7 @@ void ObjectFactory::create( std::string& objectID,
     switch(type){
 
         case Object::Scene:
+            mSceneBlueprint.create(objectID, props);
             break;
 
         case Object::Terrain:
@@ -151,6 +179,7 @@ void ObjectFactory::update( std::string& objectID,
     switch(type){
 
         case Object::Scene:
+            mSceneBlueprint.update(objectID, props);
             break;
 
         case Object::Terrain:
@@ -188,6 +217,7 @@ void ObjectFactory::destroy( std::string& objectID,
     switch(type){
 
         case Object::Scene:
+            mSceneBlueprint.destroy(objectID, props);
             break;
 
         case Object::Terrain:

@@ -8,8 +8,8 @@ start_link(_StartArgs) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    RestartStrategy    = one_for_one,
-    MaxRestarts        = 10,
+    RestartStrategy    = one_for_all,
+    MaxRestarts        = 0,
     MaxTimeBetRestarts = 30,
 
     Flags = {RestartStrategy, MaxRestarts, MaxTimeBetRestarts},

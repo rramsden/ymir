@@ -33,7 +33,7 @@ namespace Ymir {
         mPageManager(NULL),
         mWorld(NULL),
 
-        mBroadface(NULL),
+        mBroadphase(NULL),
         mCollisionConfig(NULL),
         mCollisionDispatcher(NULL),
         mConstraintSolver(NULL),
@@ -95,11 +95,11 @@ namespace Ymir {
         //<<HERE>> This needs to be taken out into a new function.
         //New bootstrap process will be: start, load scenes,
         //activateScene (MyGui comes with this?)
-        if( !mScene ){
+        /*if( !mScene ){
             mScene = root->createSceneManager(ST_GENERIC);
         
             mScene->setAmbientLight(ColourValue(0.5,0.5,0.5));
-        }
+        }*/
     
         if( !window ){
             window = root->initialise( true, title );
@@ -131,26 +131,26 @@ namespace Ymir {
     void Core::stop(){
 
         if( root ){
+
+            if( mScene ){
+                core->logNormal("Destroying scene...");
+   
+                std::string id = mScene->getName();
+                PropList temp = PropList();
+
+                ObjectFactory::destroy(id, Object::Scene, temp);
+            }
+
+            if( window ){
+                root->detachRenderTarget(window);
+            }
+
             root->shutdown();
-            
+
             if( em ){
                 delete em;
             }
             
-            if( window ){
-                root->detachRenderTarget(window);
-            }
-    
-            if( gui ){
-                gui->shutdown();
-                delete gui;
-            }
-    
-            if( platform ){
-                platform->shutdown();
-                delete platform;
-            }
-    
             delete root;
         }
     
@@ -191,9 +191,10 @@ namespace Ymir {
         }
     }
   
-    void Core::initialiseMyGUI(string& config){
-        if( root ){
-            logNormal("Initializing MyGUI Subsystem...");
+    /*void Core::initialiseMyGUI(string& config){
+        if( root && window && mScene ){
+            logNormal("Initializing MyGUI Subsystem...");  
+            
             if( !platform ){
        
                 platform = new OgrePlatform();
@@ -204,8 +205,7 @@ namespace Ymir {
                 gui = new Gui();
                 gui->initialise();
           }
-
-        }
+        } 
     }
 
     void Core::setViewport( const String& name ){
@@ -215,23 +215,24 @@ namespace Ymir {
             logCritical("No render window active!  Unable to add camera!"); 
             return;
         }
-    
-        if( rendering ){
-            //<<HERE>> TODO
-        } else {
-       
-            temp = mScene->getCamera(name);
-            if( !temp ){
-                //<<HERE>> TODO
-            }
+  
+        if( !mScene ){
+            logCritical("No scene active!  Unable to find camera!");
+            return;
+        }   
 
-            if( viewport ){
-                //<<HERE>> TODO
-            } else {
-                viewport = window->addViewport(temp);
-            }
+        if( !(temp = mScene->getCamera(name)) ){
+            logCritical("No camera found with name: " + name);
+            return;
         }
-    }
+
+        if( viewport ){
+            return;
+        } else {
+            logNormal("Setting viewport");
+            viewport = window->addViewport(temp);
+        }
+    }*/
     
     void Core::windowClosed(RenderWindow* rw){
     
@@ -243,14 +244,12 @@ namespace Ymir {
 
         if( !root || !window ){
             return -EINVAL;
-            
         }
 
-        Ogre::Timer timer;
         Ogre::WindowEventUtilities::messagePump();  
         root->renderOneFrame();
        
-        return timer.getMilliseconds();
+        return 0;
     }
     
 

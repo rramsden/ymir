@@ -128,7 +128,7 @@ GEN_CNODE_DEFINE( initialiseAllResourceGroups ){
     return 0;
 }
 
-GEN_CNODE_DEFINE( initialiseMyGUI ){
+/*GEN_CNODE_DEFINE( initialiseMyGUI ){
     int idx = 0;
     string config = "";
 
@@ -141,7 +141,7 @@ GEN_CNODE_DEFINE( initialiseMyGUI ){
 
     gen_cnode_format(resp, "ok");
     return 0;
-}
+}*/
 
 //Expects a list of {uuid:string, type:string, [{prop:string, value:varies},...]}
 GEN_CNODE_DEFINE( create ){
@@ -149,16 +149,12 @@ GEN_CNODE_DEFINE( create ){
 
     //Decode each object
     for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
-        int arity = 0;
         string uuid = "";
         Ymir::Object::Type type = Ymir::Object::Invalid;
         Ymir::PropList props = Ymir::PropList();
 
         //UUID, type, and prop list are requred
-        if( ei_decode_tuple_header(args, &idx, &arity) || 
-            (arity != 3) ||
-            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) ) 
-        { 
+        if( ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) ){ 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error,einval}");
             break;
@@ -176,7 +172,7 @@ GEN_CNODE_DEFINE( create ){
 
     if( !rc ){
         gen_cnode_format(resp, "ok");
-    }
+    } 
 
     return rc;
 }
@@ -186,16 +182,12 @@ GEN_CNODE_DEFINE( update ){
 
     //Decode each update object
     for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
-        int arity = 0;
         string uuid = "";
         Ymir::Object::Type type = Ymir::Object::Invalid;
         Ymir::PropList props = Ymir::PropList();
 
         //UUID, type, and prop list are requred
-        if( ei_decode_tuple_header(args, &idx, &arity) || 
-            (arity != 3) || 
-            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) )
-        { 
+        if( ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) ){ 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error,einval}");
             break;
@@ -225,16 +217,12 @@ GEN_CNODE_DEFINE( destroy ){
 
     //Decode each update object
     for( int i = 0, idx = 0; !rc && (i < argc); i++ ){
-        int arity = 0;
         string uuid = "";
         Ymir::Object::Type type = Ymir::Object::Invalid;
         Ymir::PropList props = Ymir::PropList();
 
         //UUID, type, and prop list are requred
-        if( ei_decode_tuple_header(args, &idx, &arity) || 
-            (arity != 3) || 
-            ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) )
-        { 
+        if( ObjectFactory::decodeObject(args, &idx, &uuid, &type, &props) ){ 
             rc = -EINVAL;
             gen_cnode_format(resp, "{error, failed_to_decode}");
             break;
@@ -257,7 +245,7 @@ GEN_CNODE_DEFINE( destroy ){
     return rc;
 }
 
-GEN_CNODE_DEFINE( setViewport ){
+/*GEN_CNODE_DEFINE( setViewport ){
     int rc = 0, idx = 0;
     string uuid = "";
 
@@ -272,7 +260,7 @@ GEN_CNODE_DEFINE( setViewport ){
 
     exit:
     return rc;
-}
+}*/
 
 GEN_CNODE_DEFINE( addEventHandler ){
 
@@ -284,14 +272,12 @@ GEN_CNODE_DEFINE( addEventHandler ){
 }
 
 GEN_CNODE_DEFINE(ticktock){
-    int time = 0;
-
-    if( (time = ((Core*)state)->ticktock()) < 0 ){
+    if( ((Core*)state)->ticktock() < 0 ){
         gen_cnode_format(resp, "{error, failed}");      
         return -EINVAL;
     }
 
-    gen_cnode_format(resp, "{ok, ~i}", time);
+    gen_cnode_format(resp, "ok");
     return 0;
 }
 

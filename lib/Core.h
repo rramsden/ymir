@@ -57,7 +57,7 @@ namespace Ymir {
                                       bool recurse );
     
             void initialiseAllResourceGroups();
-            void initialiseMyGUI(std::string& config);
+            //void initialiseMyGUI(std::string& config);
 
             void addEventListener(OgreEventListener* event);
     
@@ -78,18 +78,20 @@ namespace Ymir {
                           Ymir::PropList& props ); 
 
             //Viewport management
-            void setViewport( const String& name );
+            //void setViewport( const String& name );
    
             //Scene Management
-            Ogre::SceneManager* findScene( const string& );
+            //Ogre::SceneManager* findScene( const string& );
             
-            void destroyAllObjects();
+            //void destroyAllObjects();
 
             //OGRE hooks
             //bool frameStarted(const FrameEvent &event);
             void windowClosed(RenderWindow* rw);
    
             static Ymir::Core* getSingletonPtr(); 
+
+            friend class SceneBlueprint;
 
             friend class TerrainBlueprint;
 
@@ -130,7 +132,7 @@ namespace Ymir {
             Ogre::PagedWorld* mWorld;
             
             //Physics for active scene
-            btBroadphaseInterface* mBroadface;
+            btBroadphaseInterface* mBroadphase;
             btDefaultCollisionConfiguration* mCollisionConfig;
             btCollisionDispatcher* mCollisionDispatcher;
             btSequentialImpulseConstraintSolver* mConstraintSolver;

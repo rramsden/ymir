@@ -23,12 +23,14 @@ start() ->
                                     {"nearClip", 5.0},
                                     {"fixYaw", true}] },
 
-    ymir_demo:core_call({create, [Light, Ground]}),
-    ymir_demo:core_call({update, [Camera]}). 
+    Scene = { title(), "scene", [{"ambient", {0.5, 0.5, 0.5, 1.0}},
+                                 {"viewport", "Camera"},
+                                 {"objects", [Light, Ground, Camera]}] },
+
+    ymir_demo:core_call({create, [Scene]}).
 
 stop() ->
-    ymir_demo:core_call({destroy, [{"Light", "light", []}, 
-                                   {"Ground", "entity", []}]}).
+    ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
 mouse_rotate(_Key, _Val, Offset) -> Offset.

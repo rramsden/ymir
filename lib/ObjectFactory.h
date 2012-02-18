@@ -6,7 +6,9 @@
 
 namespace Ymir {
 
-    namespace Object {
+    class Object {    
+
+        public:
         typedef enum {
             Invalid = 0,
             Scene,
@@ -18,13 +20,22 @@ namespace Ymir {
             Button,
             Max
         } Type;
-    }
+
+        Object() : id(""), type(Invalid), props() {}
+
+        Object( std::string id, 
+                Type type,
+                PropList props ) : id(id), type(type), props(props){}
+        ~Object(){}
+
+        std::string id;
+        Type type;
+        PropList props;
+    };
 
     class ObjectFactory {
    
         public:
-
-
 
             static int decode( const char* data, 
                                int* idx,
@@ -36,6 +47,10 @@ namespace Ymir {
                                      std::string* id,
                                      Object::Type* type,
                                      PropList* props );
+
+            static int decodeObject( const char* data,
+                                     int* idx, 
+                                     Object* obj );
 
             static void create( std::string& objectID,
                                 Object::Type type,

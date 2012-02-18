@@ -127,7 +127,7 @@ namespace Ymir {
         if( !data || !idx || ei_decode_list_header(data, idx, &count) ){
             return -EINVAL;
         }   
-    
+   
         //Walk the list of given properties
         for( int i = 0; i < count; i++ ){
             int arity = 0;
@@ -139,6 +139,7 @@ namespace Ymir {
                 (arity != 2) ||
                 Ymir::decodeString(data, idx, &prop) )
             {
+                Core::getSingletonPtr()->logCritical("Failed to decode property name!");
                 return -EINVAL;
             }
  
@@ -146,12 +147,18 @@ namespace Ymir {
             //Lookup the prop in the blueprint's map
             Blueprint::iterator it;
 
+            if( ((it = mBlueprint.find(prop)) == mBlueprint.end()) ||
+                !(it->second.first) )
+            {
+                Core::getSingletonPtr()->logCritical("No decoding function specified for prop: " + prop);
+                return -EINVAL;
+            }
+
             //If the entry and its decode function are defined 
             //then call the decodeFP. Otherwise, error.
-            if( ((it = mBlueprint.find(prop)) != mBlueprint.end()) && 
-                it->second.first &&
-                it->second.first(data, idx, &val) )
-            {
+            if( it->second.first(data, idx, &val) ){
+
+                Core::getSingletonPtr()->logCritical("Failed to decode property: " + prop);
                 return -EINVAL;
             }
             

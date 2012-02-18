@@ -10,29 +10,31 @@ title() -> "Terrain Demo".
 description() -> "Simple terrain with paging".
 actions() -> [{frameStarted, fun(S) -> move(S) end}].
 start() -> 
-    Terrain = {"Terrain", "terrain", [ {"align", "align_x_z"},
-                                       {"terrainSize", 513},
-                                       {"worldSize", 12000.0},
-                                       {"prefix", "testTerrain"},
-                                       {"postfix", "dat"},
-                                       {"origin", {0.0, 0.0, 0.0}},
-                                       {"loadRadius", 2000},
-                                       {"holdRadius", 3000},
-                                       {"camera", "Camera"},
-                                       {"minY", 0}, {"maxY", 0},
-                                       {"minX", 0}, {"maxX", 0} ]},
+    Terrain = [ {"align", "align_x_z"},
+                {"terrainSize", 513},
+                {"worldSize", 12000.0},
+                {"prefix", "testTerrain"},
+                {"postfix", "dat"},
+                {"origin", {0.0, 0.0, 0.0}},
+                {"loadRadius", 2000},
+                {"holdRadius", 3000},
+                {"camera", "Camera"},
+                {"minY", 0}, {"maxY", 0},
+                {"minX", 0}, {"maxX", 0} ],
 
-    ymir_demo:core_call({update, 
-                       [{"Camera", "camera", [{"position", {1683.0, 50.0, 2116.0}},
-                                              {"lookAt", {1963.0, 50.0, 1660.0}},
-                                              {"nearClip", 0.01},
-                                              {"farClip", 50000.0}]}]} ),
+    Camera = {"Camera", "camera", [{"position", {1683.0, 50.0, 2116.0}},
+                                   {"lookAt", {1963.0, 50.0, 1660.0}},
+                                   {"nearClip", 0.01},
+                                   {"farClip", 50000.0}]},
 
-    ymir_demo:core_call({create, [Terrain]}).
-
+    Scene = { title(), "scene", [ {"viewport", "Camera"},
+                                  {"terrain", Terrain},
+                                  {"objects", [Camera]} ] },
+    
+    ymir_demo:core_call({create, [Scene]}).
 
 stop() -> 
-    ymir_demo:core_call({destroy, [{"Terrain", "terrain", []}]}).
+    ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 %%%%%% Action Definitions
 mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};

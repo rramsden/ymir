@@ -22,8 +22,9 @@
 -define(FRAME_LOW_TIMEOUT, 100000).
 -define(FRAME_HIGH_TIMEOUT, 100000).
 
--record( demo, { title, module } ).
--record( demoState, { timerDwell = ?TIMER_DWELL_DEFAULT,
+%-record( demo, { title, module } ).
+-record( demoState, { demos = {[],[],[]},
+                      timerDwell = ?TIMER_DWELL_DEFAULT,
                       renderTimer,
                       frames = 0,
                       framesSampled = 0,
@@ -36,10 +37,11 @@
                     } ).
 
 core_call( {Func, Args} ) ->
-    gen_server:call(ogre_manager, {parent, 'ymir_core', Func, Args}, infinity).
+    {Res, _Time} = gen_server:call(ogre_manager, {parent, 'ymir_core', Func, Args}),
+    Res.
 
 core_call_process( {Func, Args} ) ->
-    Res = core_call( {Func, Args} ),
+    Res = gen_server:call(ogre_manager, {parent, 'ymir_core', Func, Args}, infinity),
     exit(Res).
 
 core_cast( {Func, Args} ) ->
@@ -50,6 +52,19 @@ render_timer( Dwell ) ->
                           gen_event, 
                           notify, 
                           [event_manager, ticktock] ).
+
+draw_main_menu(Demos) when is_list(Demos) ->
+
+    io:format("drawing menu...~n"), 
+    Buttons = lists:map(fun({_M, B, _A}) -> B end, Demos),
+    Actions = lists:map(fun({_M, _B, A}) -> A end, Demos),
+
+    io:format("Creating scene with Buttons: ~p!~n", [Buttons]),
+    Camera = {"Camera", "camera", []},
+    ok = core_call({create, [{"Main Menu", "scene", [{"viewport", "Camera"},
+                                                      {"objects", [Camera] ++ Buttons}]}]}),
+
+    Actions ++ [{{keyDown, ?KC_ESCAPE}, fun(S) -> stop(S) end}].
 
 
 
@@ -145,20 +160,19 @@ handle_call( {unload_demo, Module}, _From, State ) ->
 
     %%Disable render calls - This prevents the C side from
     %% getting flooded while loading big scenes.
-    {ok, cancel} = timer:cancel(State#demoState.renderTimer),
+    %{ok, cancel} = timer:cancel(State#demoState.renderTimer),
 
-    F = fun(D, {Updates, Actions}) -> 
+    %F = fun(D, {Buttons, Actions}) -> 
   
-        { Updates ++ [{D#demo.title, "button", [{"visible", true}]}],
-          Actions ++ [{{guiMouseButtonClick, D#demo.title},
-              fun(S) -> ymir_demo:demo_start(D#demo.module, S) end}] }       
-    end,
+    %    { Buttons ++ [{D#demo.title, "button", []}],
+    %      Actions ++ [{{guiMouseButtonClick, D#demo.title},
+    %          fun(S) -> ymir_demo:demo_start(D#demo.module, S) end}] }       
+    %end,
 
-    {atomic, {Updates, Actions}} = mnesia:transaction( fun() -> mnesia:foldl(F, {[],[]}, demo) end ),
+    %{atomic, {Buttons, Actions}} = mnesia:transaction( fun() -> mnesia:foldl(F, {[],[]}, demo) end ),
 
-    %%Send word to ymir_core to make the buttons visible again
-    ymir_demo:core_call({update, Updates}),
-
+    Actions = draw_main_menu(State#demoState.demos),
+   
     %% Start rendering again
     {ok, TRef} = render_timer(?TIMER_DWELL_DEFAULT),
 
@@ -170,15 +184,15 @@ handle_call( {unload_demo, Module}, _From, State ) ->
 
 handle_call( {load_demo, Module}, _From, State ) ->
 
-    %%Hide the main menu
-    hide_main_menu(),
-
     %%Disable render calls - This prevents the C side from
     %% getting flooded while loading big scenes.
     {ok, cancel} = timer:cancel(State#demoState.renderTimer),
     
-    %%Let things quiet a bit
+    %%Let things quiet a bit (on the C side)
     timer:sleep(50),
+
+    %%Destroy the main menu scene and allow module to create their own
+    ok = core_call({destroy, [{"Main Menu", "scene", []}]}),
 
     %% Turn over control to Module
     ok = Module:start(),
@@ -187,6 +201,10 @@ handle_call( {load_demo, Module}, _From, State ) ->
     Actions = 
         [{{keyDown, ?KC_Q}, fun(S) -> show_main_menu(Module, S) end }] ++ 
         Module:actions(),
+
+    %ok = gen_event:call(event_manager, 
+    %                    ymir_demo_event_manager, 
+    %                    {set_actions, Actions}),
 
     %% Start rendering again
     {ok, TRef} = render_timer(?TIMER_DWELL_DEFAULT),
@@ -210,7 +228,7 @@ handle_cast( _Msg, State ) ->
 handle_process_exit( {ticktock, _Args}, {ok, Time}, State ) when is_integer(Time) ->
 
     FramesSampled = State#demoState.framesSampled + 1,
-    FrameTime = State#demoState.frameTime + Time,
+    FrameTime = State#demoState.frameTime + (Time/1000),
 
     DesiredRate = State#demoState.timerDwell,
     ActualRate = erlang:round(FrameTime / FramesSampled),
@@ -220,7 +238,7 @@ handle_process_exit( {ticktock, _Args}, {ok, Time}, State ) when is_integer(Time
               State#demoState{ framesSampled = FramesSampled,
                                frameTime = FrameTime } );
 
-handle_process_exit( _Other, ok, State ) ->
+handle_process_exit( _Other, {ok, _Time}, State ) ->
     State#demoState{ call_finish = State#demoState.call_finish + 1 };
 
 handle_process_exit( Other, Res, State ) -> 
@@ -252,8 +270,12 @@ init(State) ->
 
     process_flag( trap_exit, true ),
 
-    ok = gen_server:call(ogre_manager, {load, ymir_core}),
-  
+    io:format("Loding ymir_core library..~n"),
+
+    {ok, _Time} = gen_server:call(ogre_manager, {load, ymir_core}),
+ 
+    io:format("Loaded ymir_core library..~n"),
+
     ok = core_call({start, [ "Ymir Demo",
                              "./plugins.cfg",
                              "./ogre.cfg",
@@ -270,26 +292,30 @@ init(State) ->
 
     ok = core_call({initialiseAllResourceGroups, []}),
 
-    ok = core_call({create, [{ "Camera",
-                               "camera",
-                               []}]}),
+    {Demos, _Final} = load_modules(),
 
-    ok = core_call({setViewport, ["Camera"]}),
+    ok = gen_event:add_handler( event_manager, ymir_demo_event_manager, [] ),
 
-    ok = core_call({initialiseMyGUI, ["core.xml"]}),
+    Actions = draw_main_menu(Demos),
+   
+    ok = gen_event:call(event_manager, 
+                   ymir_demo_event_manager, 
+                   {set_actions, Actions}),
 
     ok = core_call({addEventHandler, []}),
 
-    {Actions, _Final} = load_modules(),
+    %ok = core_call({create, [{ "Camera",
+    %                           "camera",
+    %                           []}]}),
 
-    ok = gen_event:add_handler( event_manager, 
-                                ymir_demo_event_manager, 
-                                Actions++ [{{keyDown, ?KC_ESCAPE}, fun(S) -> stop(S) end}]),
+    %ok = core_call({setViewport, ["Camera"]}),
+
+    %ok = core_call({initialiseMyGUI, ["core.xml"]}),
 
     ok = timer:start(),
     {ok, TRef} = render_timer(?TIMER_DWELL_DEFAULT),
 
-    {ok, State#demoState{timerDwell = ?TIMER_DWELL_DEFAULT, renderTimer = TRef}}.
+    {ok, State#demoState{ demos = Demos, timerDwell = ?TIMER_DWELL_DEFAULT, renderTimer = TRef}}.
 
 load_modules() -> 
 
@@ -297,9 +323,9 @@ load_modules() ->
     io:format("Node: ~p~n", [node()]),
 
     %%Init mnesia to store set of active demos
-    mnesia:create_schema([node()]), 
-    mnesia:start(),
-    mnesia:create_table(demo, [{attributes, record_info(fields, demo)}]),
+    %mnesia:create_schema([node()]), 
+    %mnesia:start(),
+    %mnesia:create_table(demo, [{attributes, record_info(fields, demo)}]),
 
     Files = filelib:wildcard("./ebin/ymir_demo_module_*.beam"),
 
@@ -308,7 +334,7 @@ load_modules() ->
                  Files).
 
  
-load_demo(ModulePath, {Actions, {Left, Top, Width, Height}}) ->   
+load_demo(ModulePath, {Modules, {Left, Top, Width, Height}}) ->   
     ModuleRoot = filename:rootname(ModulePath),
     
     io:format("Trying to load ~s~n", [ModuleRoot]),
@@ -316,27 +342,27 @@ load_demo(ModulePath, {Actions, {Left, Top, Width, Height}}) ->
     %Load the demo module
     { module, Module } = code:load_abs(ModuleRoot),
 
-    %%Create the demo's button 
-    ok = core_call({create, [ {Module:title(),
+    Button = {Module:title(),
                                "button",
                                 [
                                        {"position", {Left, Top, Width, Height}},
                                        {"align", "Default"},
                                        {"layer", "Main"},
                                        {"skin", "Button"},
-                                       {"caption", Module:title()} ]}
-                                 ]}),
-
-    %Record the demo in the database
-    F = fun() ->
-            mnesia:write( #demo{ title = Module:title(), module = Module} ) 
-        end,
-
-    {atomic, ok} = mnesia:transaction(F),
-
+                                       {"caption", Module:title()} 
+                                 ]},
 
     B = fun(S) -> demo_start(Module, S) end, 
-    {Actions ++ [{{guiMouseButtonClick, Module:title()}, B}], {Left, Top + Height + 10, Width, Height}}.
+    Action = {{guiMouseButtonClick, Module:title()}, B},
+    %Record the demo in the database
+    %F = fun() ->
+    %        mnesia:write( #demo{ title = Module:title(), module = Module} ) 
+    %    end,
+
+    %{atomic, ok} = mnesia:transaction(F),
+
+    { Modules ++ [{Module, Button, Action}], 
+        {Left, Top + Height + 10, Width, Height} }.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %  GEN_EVENT EXPORTS
@@ -355,22 +381,19 @@ show_main_menu(Module, State) ->
 
     Actions = gen_server:call(ymir_demo, {unload_demo, Module}), 
 
-    %%Clear left over actions and restore to original controls
-    State#eventState{actions = 
-        dict:from_list([{{keyDown, ?KC_ESCAPE}, fun(S) -> ymir_demo:stop(S) end}] ++ Actions)}.
+    State#eventState{actions = dict:from_list(Actions)}.
 
-hide_main_menu() ->
-    F = fun(D, A) ->
-        ymir_demo:core_call({update, [ {D#demo.title, "button", [{"visible", false}]} ]}),
-        A        
-    end,
-
-    %%Hide every loaded demo's GUI button
-    {atomic, ok} = mnesia:transaction( fun() -> mnesia:foldl(F, ok, demo) end ).
+%hide_main_menu() ->
+%    F = fun(D, A) ->
+%        ymir_demo:core_call({update, [ {D#demo.title, "button", [{"visible", false}]} ]}),
+%        A        
+%    end,
+%
+%    %%Hide every loaded demo's GUI button
+%    {atomic, ok} = mnesia:transaction( fun() -> mnesia:foldl(F, ok, demo) end ).
 
 demo_start(Module, State) when is_atom(Module) ->
   
     Actions = gen_server:call(ymir_demo, {load_demo, Module}),
-
-    ymir_demo_event_manager:set_actions( Actions, State ).
-
+    
+    State#eventState{actions = dict:from_list(Actions)}.

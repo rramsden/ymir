@@ -16,7 +16,7 @@ namespace Ymir {
 
             void create( std::string& id, PropList& props ){
                 Ymir::Core* core = Ymir::Core::getSingletonPtr();
-                MyGUI::Gui* gui = MyGUI::Gui::getInstancePtr();
+                MyGUI::Gui* gui = core->gui;//MyGUI::Gui::getInstancePtr();
                 EventManager* em = EventManager::getSingletonPtr();
                 MyGUI::IntCoord intCoord; 
                 std::string skin, layer;
@@ -46,7 +46,7 @@ namespace Ymir {
             }
 
             void update( std::string& id, PropList& props ){
-                MyGUI::Gui* gui = MyGUI::Gui::getInstancePtr();
+                MyGUI::Gui* gui = Core::getSingletonPtr()->gui;
 
                 T* obj = gui->findWidget<T>(id);
 
