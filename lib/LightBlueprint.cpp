@@ -28,7 +28,7 @@ namespace Ymir {
         return 0;
     }
 
-    void LightBlueprint::setLightSource( NodeTuple<Ogre::Light>* tup, boost::any& val ){
+    void LightBlueprint::setLightSource( NodeInfo<Ogre::Light>* tup, boost::any& val ){
         tup->mObject->setType(any_cast<Ogre::Light::LightTypes>(val));
     }
 

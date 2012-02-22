@@ -17,6 +17,10 @@ namespace Ymir{
         
         mBlueprint["ambient"] = BPFP(&decodeColourVal, (setFP)&setAmbient);
         mBlueprint["viewport"] = BPFP(&decodeString, NULL);
+
+        mBlueprint["debug"] = BPFP(&decodeBool, (setFP)&setDebug);
+        mBlueprint["gravity"] = BPFP(&decodeVector3, (setFP)&setGravity);
+
         //mBlueprint["fog"] = BPFP(&decodeFog, (setFP)&setFog);
 
         //Physics properties
@@ -43,8 +47,14 @@ namespace Ymir{
                                          core->mBroadphase,
                                          core->mConstraintSolver,
                                          core->mCollisionConfig );
-        
-        
+
+        core->mDebugDrawer = 
+            new BtOgre::DebugDrawer( core->mScene->getRootSceneNode(), 
+                                     core->mDynamicsWorld );
+
+        //Disable debug drawing and set it as the debug drawer for physics sim
+        core->mDebugDrawer->setDebugMode(0);
+        core->mDynamicsWorld->setDebugDrawer(core->mDebugDrawer);
     }
 
     void SceneBlueprint::createSceneManager( std::string& id, PropList& props ){
@@ -114,8 +124,6 @@ namespace Ymir{
 
         //Setup the physics environment
         createPhysicsSim(props);
-
-
 
         //Before creating objects, we first must look ahead
         //for a defined viewport.  This is a requirement of the MyGUI
@@ -191,10 +199,27 @@ namespace Ymir{
 
         core->logNormal("Destroying bullet simulation...");
 
+        //Destroy all tracked physics objects
+        std::map<std::string, RigidObjectInfo>::iterator it;
+        for( it=core->mRigidObjects.begin(); it != core->mRigidObjects.end(); it++ )
+        {
+            core->logNormal("Deleting physics state for: " + it->first);
+            
+            delete it->second.shape;
+            delete it->second.body;
+            delete it->second.state;
+        }
+        core->mRigidObjects.clear();
+
         //Clean up physics simulation
         if( core->mDynamicsWorld ){
             delete core->mDynamicsWorld;
             core->mDynamicsWorld = NULL;
+        }
+
+        if( core->mDebugDrawer ){
+            delete core->mDebugDrawer;
+            core->mDebugDrawer = NULL;
         }
 
         if( core->mConstraintSolver ){
@@ -295,5 +320,19 @@ namespace Ymir{
 
     void SceneBlueprint::setAmbient(Ogre::SceneManager* scene, boost::any& val){
         scene->setAmbientLight(boost::any_cast<Ogre::ColourValue>(val));
+    }
+
+    void SceneBlueprint::setDebug(Ogre::SceneManager* scene, boost::any& val){
+        Core* core = Core::getSingletonPtr();
+        int isOn = boost::any_cast<bool>(val) ? 1 : 0;
+
+        core->mDebugDrawer->setDebugMode(isOn);
+    }
+
+    void SceneBlueprint::setGravity(Ogre::SceneManager* scene, boost::any& val){
+        Core* core = Core::getSingletonPtr();
+        Vector3 vec = boost::any_cast<Vector3>(val);
+
+        core->mDynamicsWorld->setGravity(BtOgre::Convert::toBullet(vec));
     }
 }

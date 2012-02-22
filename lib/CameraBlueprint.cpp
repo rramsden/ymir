@@ -39,46 +39,46 @@ namespace Ymir {
     }
 
     //Setters
-    void CameraBlueprint::setCameraPosition(NodeTuple<Ogre::Camera>* t, boost::any& pos){
+    void CameraBlueprint::setCameraPosition(NodeInfo<Ogre::Camera>* t, boost::any& pos){
         t->mObject->setPosition(boost::any_cast<Vector3>(pos));
     }
     
-    void CameraBlueprint::setCameraMove(NodeTuple<Ogre::Camera>* t, boost::any& diff){
+    void CameraBlueprint::setCameraMove(NodeInfo<Ogre::Camera>* t, boost::any& diff){
         
         t->mObject->moveRelative( boost::any_cast<Ogre::Vector3>(diff) );
     }
     
-    void CameraBlueprint::setCameraDirection(NodeTuple<Ogre::Camera>* t, boost::any& dir){
+    void CameraBlueprint::setCameraDirection(NodeInfo<Ogre::Camera>* t, boost::any& dir){
         t->mObject->setDirection(boost::any_cast<Vector3>(dir));    
     }
     
-    void CameraBlueprint::setCameraYaw(NodeTuple<Ogre::Camera>* t, boost::any& rad){
+    void CameraBlueprint::setCameraYaw(NodeInfo<Ogre::Camera>* t, boost::any& rad){
         t->mObject->yaw(boost::any_cast<Radian>(rad));
     }
     
     
-    void CameraBlueprint::setCameraPitch(NodeTuple<Ogre::Camera>* t, boost::any& rad){
+    void CameraBlueprint::setCameraPitch(NodeInfo<Ogre::Camera>* t, boost::any& rad){
         t->mObject->pitch(boost::any_cast<Radian>(rad));
     }
     
     
-    void CameraBlueprint::setCameraRoll(NodeTuple<Ogre::Camera>* t, boost::any& rad){
+    void CameraBlueprint::setCameraRoll(NodeInfo<Ogre::Camera>* t, boost::any& rad){
         t->mObject->roll(boost::any_cast<Radian>(rad));
     }
     
-    void CameraBlueprint::setCameraLookAt(NodeTuple<Ogre::Camera>* t, boost::any& look){
+    void CameraBlueprint::setCameraLookAt(NodeInfo<Ogre::Camera>* t, boost::any& look){
         t->mObject->lookAt(boost::any_cast<Vector3>(look));
     }
 
-    void CameraBlueprint::setNearClip(NodeTuple<Ogre::Camera>* t, boost::any& val){
+    void CameraBlueprint::setNearClip(NodeInfo<Ogre::Camera>* t, boost::any& val){
         t->mObject->setNearClipDistance(boost::any_cast<Ogre::Real>(val));
     }
 
-    void CameraBlueprint::setFarClip(NodeTuple<Ogre::Camera>* t, boost::any& val){
+    void CameraBlueprint::setFarClip(NodeInfo<Ogre::Camera>* t, boost::any& val){
         t->mObject->setFarClipDistance(boost::any_cast<Ogre::Real>(val));
     }
 
-    void CameraBlueprint::setFixYaw(NodeTuple<Ogre::Camera>* t, boost::any& val){
+    void CameraBlueprint::setFixYaw(NodeInfo<Ogre::Camera>* t, boost::any& val){
         t->mObject->setFixedYawAxis(boost::any_cast<bool>(val));
     }
 
@@ -88,7 +88,6 @@ namespace Ymir {
     {
         return scene->createCamera(id);
     }
-
 
     Ogre::Camera* CameraBlueprint::findOgreObject( std::string& id, 
                                                    Ogre::SceneManager* scene)

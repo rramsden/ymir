@@ -37,7 +37,9 @@ namespace Ymir {
         mCollisionConfig(NULL),
         mCollisionDispatcher(NULL),
         mConstraintSolver(NULL),
-        mDynamicsWorld(NULL)
+        mDebugDrawer(NULL),
+        mDynamicsWorld(NULL),
+        mRigidObjects()
 
     {
     
@@ -242,13 +244,18 @@ namespace Ymir {
     int Core::ticktock(){
 
 
-        if( !root || !window ){
+        if( !root || !window || !mDynamicsWorld ){
             return -EINVAL;
         }
 
         Ogre::WindowEventUtilities::messagePump();  
-        root->renderOneFrame();
        
+        //Step the physics sim
+       
+        mDynamicsWorld->stepSimulation(1/60.f, 10);
+        mDebugDrawer->step();
+        root->renderOneFrame();
+      
         return 0;
     }
     

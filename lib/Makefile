@@ -25,6 +25,9 @@ clean:
 clobber: clean
 	rm -f $(LIB_TARGETS)
 
+BtOgre.o: BtOgre.cpp BtOgrePG.h BtOgreGP.h BtOgreExtras.h
+	$(CPP) -c -o $@ $(CFLAGS) $<
+
 DecodeBasic.o: DecodeBasic.cpp DecodeBasic.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
@@ -69,5 +72,5 @@ libymir_core.o: libymir_core.cpp
 
 libymir_core.so: CFLAGS += -fPIC -I$(INC_DIR) -I$(ERL_INTERFACE_INCLUDE)  $(shell pkg-config --cflags OGRE-Terrain OIS bullet MYGUI)
 libymir_core.so: LFLAGS += -L$(ERL_INTERFACE_LIB) -lei -L$(LIB_DIR) $(shell pkg-config --libs OGRE-Terrain OIS bullet MYGUI)
-libymir_core.so: DecodeBasic.o ObjectBlueprint.o OgreBlueprint.o EntityBlueprint.o LightBlueprint.o CameraBlueprint.o TerrainBlueprint.o SceneBlueprint.o ButtonBlueprint.o ObjectFactory.o OgreEventListener.o Core.o EventManager.o libymir_core.o
+libymir_core.so: DecodeBasic.o ObjectBlueprint.o OgreBlueprint.o EntityBlueprint.o LightBlueprint.o CameraBlueprint.o TerrainBlueprint.o SceneBlueprint.o ButtonBlueprint.o ObjectFactory.o BtOgre.o OgreEventListener.o Core.o EventManager.o libymir_core.o
 	$(CPP) $(LDFLAGS) $^ $(LFLAGS) -lMyGUI.OgrePlatform -o $@

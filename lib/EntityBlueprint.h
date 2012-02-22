@@ -15,13 +15,15 @@ namespace Ymir {
 
             static int decodePrefabType(const char*, int*, boost::any*);
 
-            static void setMaterial( NodeTuple<Ogre::Entity>* t, boost::any& );
+            static void setMaterial( NodeInfo<Ogre::Entity>* t, boost::any& );
 
         protected:
 
             Ogre::Entity* createOgreObject(std::string&,
                                      Ymir::PropList&,
                                      Ogre::SceneManager*);
+
+            btCollisionShape* createPhysicsObject( Entity* ent );
 
             Ogre::Entity* findOgreObject( std::string& id, 
                                           Ogre::SceneManager* scene);

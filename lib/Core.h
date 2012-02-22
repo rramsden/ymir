@@ -16,6 +16,7 @@
 
 //Physics subsystem
 #include <btBulletDynamicsCommon.h>
+#include "BtOgrePG.h"
  
 //Object Types
 #include "ObjectFactory.h"
@@ -35,6 +36,15 @@ using namespace std;
 using namespace Ogre;
 
 namespace Ymir {
+
+    typedef struct {
+        btCollisionShape* shape;
+        btRigidBody* body;
+        BtOgre::RigidBodyState* state;
+    } RigidObjectInfo; 
+
+    typedef std::pair<btCollisionShape*, btCollisionObject*> RigidObject;
+    typedef std::pair<RigidObject, BtOgre::RigidBodyState*> RigidObjectState;
 
     class Core : public WindowEventListener 
     {
@@ -136,7 +146,10 @@ namespace Ymir {
             btDefaultCollisionConfiguration* mCollisionConfig;
             btCollisionDispatcher* mCollisionDispatcher;
             btSequentialImpulseConstraintSolver* mConstraintSolver;
+            BtOgre::DebugDrawer* mDebugDrawer;
             btDiscreteDynamicsWorld* mDynamicsWorld;
+
+            std::map<std::string, RigidObjectInfo> mRigidObjects;
 
             static Core* core;
     };

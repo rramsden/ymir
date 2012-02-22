@@ -14,9 +14,17 @@ start() ->
     Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
                                  {"source", "point"} ]},
     Ground = {"Ground", "entity", [{"shape", "cube"},
+                                   {"mass", 0.0},
                                    {"orientation", {0.0, 0.0, 0.0, 1.0}}, 
                                    {"scale", {1.0, 0.05, 1.0}},
                                    {"material", "Examples/Rockwall"}]},
+
+    Ball = {"Ball", "entity", [{"shape", "cube"},
+                               {"scale", {0.1, 0.1, 0.1}},
+                               {"mass", 1.0},
+                               {"position", {0.0, 60.0, 0.0}},
+                               {"material", "Examples/BumpyMetal"}]},
+
     Camera = { "Camera", "camera", [{"position", {0.0, 30.0, 65.0}},
                                     {"lookAt", {0.0, 0.0, 0.0}},
                                     {"pitch", -0.25},
@@ -24,8 +32,10 @@ start() ->
                                     {"fixYaw", true}] },
 
     Scene = { title(), "scene", [{"ambient", {0.5, 0.5, 0.5, 1.0}},
+                                 {"debug", true},
+                                 {"gravity", {0.0, -9.8, 0.0}},
                                  {"viewport", "Camera"},
-                                 {"objects", [Light, Ground, Camera]}] },
+                                 {"objects", [Light, Ground, Ball, Camera]}] },
 
     ymir_demo:core_call({create, [Scene]}).
 

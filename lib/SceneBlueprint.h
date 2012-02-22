@@ -24,6 +24,8 @@ class SceneBlueprint : public OgreBlueprint {
 
         //static void setFog( Ogre::SceneManager*, boost::any& );
         static void setAmbient( Ogre::SceneManager*, boost::any& );
+        static void setDebug( Ogre::SceneManager*, boost::any& );
+        static void setGravity( Ogre::SceneManager*, boost::any& );
 
     protected:
         void createSceneManager( std::string& id, PropList& props );

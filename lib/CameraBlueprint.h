@@ -14,16 +14,16 @@ namespace Ymir {
             ~CameraBlueprint(){}
             
             //Cameras overrides default SceneNode behavior
-            static void setCameraPosition(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraMove(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraDirection(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraLookAt(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraYaw(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraPitch(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setCameraRoll(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setNearClip(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setFarClip(NodeTuple<Ogre::Camera>*, boost::any&);
-            static void setFixYaw(NodeTuple<Ogre::Camera>*, boost::any&);
+            static void setCameraPosition(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraMove(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraDirection(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraLookAt(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraYaw(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraPitch(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setCameraRoll(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setNearClip(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setFarClip(NodeInfo<Ogre::Camera>*, boost::any&);
+            static void setFixYaw(NodeInfo<Ogre::Camera>*, boost::any&);
 
         protected:
             Ogre::Camera* createOgreObject( std::string&, 

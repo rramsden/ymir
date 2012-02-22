@@ -34,7 +34,7 @@ int EntityBlueprint::decodePrefabType( const char* data,
     return 0;
 }
 
-void EntityBlueprint::setMaterial( NodeTuple<Ogre::Entity>* t, boost::any& mat ){
+void EntityBlueprint::setMaterial( NodeInfo<Ogre::Entity>* t, boost::any& mat ){
     t->mObject->setMaterialName(boost::any_cast<std::string>(mat));
 }
 
@@ -57,6 +57,14 @@ Ogre::Entity* EntityBlueprint::createOgreObject(std::string& id,
         //<<HERE>> TODO: Throw exception
         return NULL;
     }
+}
+
+btCollisionShape* EntityBlueprint::createPhysicsObject( Entity* ent ){
+    BtOgre::StaticMeshToShapeConverter converter(ent);
+
+    Core::getSingletonPtr()->logNormal("Creating box shape around entity!");
+
+    return converter.createBox();
 }
 
 Ogre::Entity* EntityBlueprint::findOgreObject( std::string& id, 

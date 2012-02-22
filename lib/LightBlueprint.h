@@ -17,7 +17,7 @@ namespace Ymir {
                                       int* idx,
                                       boost::any* output );
 
-            static void setLightSource( NodeTuple<Ogre::Light>*, boost::any& );
+            static void setLightSource( NodeInfo<Ogre::Light>*, boost::any& );
 
         protected:
             Ogre::Light* createOgreObject(std::string&,
