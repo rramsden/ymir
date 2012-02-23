@@ -203,12 +203,17 @@ namespace Ymir {
         }
 
         Ogre::WindowEventUtilities::messagePump();  
-       
         root->renderOneFrame();
-      
+
         return 0;
     }
     
+    void Core::resetTimer(){
+        //Clear ogre central timer
+        if( root ){
+            root->clearEventTimes();
+        }
+    }
 
     void Core::create( string& objectID, 
                        Ymir::Object::Type type,

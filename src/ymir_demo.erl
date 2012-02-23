@@ -135,12 +135,25 @@ throttle( _Desired, _Actual, State ) ->
 
 remove_outstanding() ->
     receive
-        Msg ->
+        _Msg ->
             remove_outstanding()
        
     after 50 ->
         ok
     end.
+
+pause_rendering(TRef) ->
+    %%Disable render calls - This prevents the C side from
+    %% getting flooded while loading big scenes.
+    {ok, cancel} = timer:cancel(TRef),
+   
+    %%Drain any outstanding messages
+    remove_outstanding().
+
+unpause_rendering(Dwell) ->
+    ok = core_call({resetTimer, []}),
+    {ok, TRef} = render_timer(Dwell),
+    TRef.
 
 %%%% gen_server bits
 
@@ -167,11 +180,8 @@ handle_call( {core, Action}, _From, State ) ->
 handle_call( {unload_demo, Module}, _From, State ) ->
     Module:stop(),
 
-    %%Disable render calls - This prevents the C side from
-    %% getting flooded while loading big scenes.
-    {ok, cancel} = timer:cancel(State#demoState.renderTimer),
-
-    remove_outstanding(),
+    %%Temporarily disable render
+    pause_rendering(State#demoState.renderTimer),
 
     %F = fun(D, {Buttons, Actions}) -> 
   
@@ -185,7 +195,7 @@ handle_call( {unload_demo, Module}, _From, State ) ->
     Actions = draw_main_menu(State#demoState.demos),
    
     %% Start rendering again
-    {ok, TRef} = render_timer(?TIMER_DWELL_DEFAULT),
+    TRef = unpause_rendering(?TIMER_DWELL_DEFAULT),
 
     {reply, Actions, State#demoState{ timerDwell = ?TIMER_DWELL_DEFAULT,
                                       frames = 0, 
@@ -195,15 +205,7 @@ handle_call( {unload_demo, Module}, _From, State ) ->
 
 handle_call( {load_demo, Module}, _From, State ) ->
 
-    %%Disable render calls - This prevents the C side from
-    %% getting flooded while loading big scenes.
-    {ok, cancel} = timer:cancel(State#demoState.renderTimer),
-   
-    %%Drain any outstanding messages
-    remove_outstanding(),
-
-    %%Let things quiet a bit (on the C side)
-    timer:sleep(50),
+    pause_rendering(State#demoState.renderTimer),
 
     %%Destroy the main menu scene and allow module to create their own
     ok = core_call({destroy, [{"Main Menu", "scene", []}]}),
@@ -221,7 +223,7 @@ handle_call( {load_demo, Module}, _From, State ) ->
     %                    {set_actions, Actions}),
 
     %% Start rendering again
-    {ok, TRef} = render_timer(?TIMER_DWELL_DEFAULT),
+    TRef = unpause_rendering(?TIMER_DWELL_DEFAULT),
 
     {reply, Actions, State#demoState{ timerDwell = ?TIMER_DWELL_DEFAULT,
                                       frames = 0, 

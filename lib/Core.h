@@ -76,8 +76,9 @@ namespace Ymir {
 
             void addEventListener(OgreEventListener* event);
     
-            //Setup and tear down of input and rendering
+            //Rendering support
             int ticktock();
+            void resetTimer();
 
             //Object management
             void create( std::string& uuid, 

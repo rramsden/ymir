@@ -281,6 +281,13 @@ GEN_CNODE_DEFINE(ticktock){
     return 0;
 }
 
+GEN_CNODE_DEFINE(resetTimer){
+    core->resetTimer();
+
+    gen_cnode_format(resp, "ok");
+    return 0;
+}
+
 /*GEN_CNODE_DEFINE(renderStart){
     int rc = 0;
 
