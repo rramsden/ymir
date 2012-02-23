@@ -51,7 +51,9 @@ namespace Ymir {
                 btRigidBody* body = NULL;
                 btScalar mass = 0;
                 btVector3 inertia;
-                
+               
+                //Set mass properties
+                props.hasProperty<float>("mass", &mass);
                 shape->calculateLocalInertia(mass, inertia); 
 
                 BtOgre::RigidBodyState* state = 
@@ -204,10 +206,9 @@ namespace Ymir {
                 i->mRigidBody->setCenterOfMassTransform(trans);
 
                 //Set mass properties
-                props.hasProperty<float>("mass", &mass);
-                i->mRigidBody->getCollisionShape()->calculateLocalInertia(mass, inertia);
-                i->mRigidBody->setMassProps(mass, inertia);
-
+                //props.hasProperty<float>("mass", &mass);
+                //i->mRigidBody->getCollisionShape()->calculateLocalInertia(mass, inertia);
+                //i->mRigidBody->setMassProps(mass, inertia);
                 //Core::getSingletonPtr()->logNormal("mass: " + Ogre::StringConverter::toString((float)mass) +
 //                                                   ", inertia: " + Ogre::StringConverter::toString(BtOgre::Convert::toOgre(inertia)) );
             }

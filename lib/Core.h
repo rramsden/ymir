@@ -32,6 +32,10 @@
 //Thread Sync
 #include <boost/thread/mutex.hpp>
 
+#define LOG_DEBUG(String) Core::getSingletonPtr()->logDebug(String)
+#define LOG_NORMAL(String) Core::getSingletonPtr()->logNormal(String)
+#define LOG_CRITICAL(String) Core::getSingletonPtr()->logCritical(String)
+
 using namespace std;
 using namespace Ogre;
 
@@ -56,7 +60,8 @@ namespace Ymir {
             //Setup and tear down of ogre root
             int start(string title, string plugins, string config, string log);
             void stop();
-    
+   
+            void logDebug( string msg ); 
             void logNormal( string msg );
             void logCritical( string msg );
     
@@ -87,16 +92,6 @@ namespace Ymir {
                           Ymir::Object::Type type, 
                           Ymir::PropList& props ); 
 
-            //Viewport management
-            //void setViewport( const String& name );
-   
-            //Scene Management
-            //Ogre::SceneManager* findScene( const string& );
-            
-            //void destroyAllObjects();
-
-            //OGRE hooks
-            //bool frameStarted(const FrameEvent &event);
             void windowClosed(RenderWindow* rw);
    
             static Ymir::Core* getSingletonPtr(); 

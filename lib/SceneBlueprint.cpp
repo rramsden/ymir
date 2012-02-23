@@ -197,6 +197,7 @@ namespace Ymir{
             core->mScene = NULL;
         }
 
+        //Clean up physics simulation
         core->logNormal("Destroying bullet simulation...");
 
         //Destroy all tracked physics objects
@@ -211,7 +212,7 @@ namespace Ymir{
         }
         core->mRigidObjects.clear();
 
-        //Clean up physics simulation
+
         if( core->mDynamicsWorld ){
             delete core->mDynamicsWorld;
             core->mDynamicsWorld = NULL;

@@ -48,7 +48,17 @@ namespace Ymir {
     Core::~Core(){
     
     }
+   
+    void Core::logDebug( string msg ){
     
+        if( log ){
+            log->logMessage(msg, Ogre::LML_TRIVIAL);
+        } else {
+            fprintf(stderr, "DEBUG:  %s\n", msg.c_str());
+        }
+
+    }
+
     void Core::logNormal( string msg ){
     
         if( log ){
@@ -93,15 +103,6 @@ namespace Ymir {
     		rc = -ENOTSUP;
             goto start_exit;
         }
-  
-        //<<HERE>> This needs to be taken out into a new function.
-        //New bootstrap process will be: start, load scenes,
-        //activateScene (MyGui comes with this?)
-        /*if( !mScene ){
-            mScene = root->createSceneManager(ST_GENERIC);
-        
-            mScene->setAmbientLight(ColourValue(0.5,0.5,0.5));
-        }*/
     
         if( !window ){
             window = root->initialise( true, title );
@@ -122,10 +123,6 @@ namespace Ymir {
     
         Ogre::TextureManager::getSingleton().setDefaultNumMipmaps(5);
    
-        //Setup terrain page manager
-        //mPageManager = OGRE_NEW Ogre::PageManager();
-        //mTerrainPaging = OGRE_NEW Ogre::TerrainPaging(mPageManager); 
-
         start_exit:
         return rc;
     }
@@ -193,49 +190,6 @@ namespace Ymir {
         }
     }
   
-    /*void Core::initialiseMyGUI(string& config){
-        if( root && window && mScene ){
-            logNormal("Initializing MyGUI Subsystem...");  
-            
-            if( !platform ){
-       
-                platform = new OgrePlatform();
-                platform->initialise(window, mScene);
-            }
-    
-            if( !gui ){
-                gui = new Gui();
-                gui->initialise();
-          }
-        } 
-    }
-
-    void Core::setViewport( const String& name ){
-        Ogre::Camera* temp = NULL;
-    
-        if( !window ){ 
-            logCritical("No render window active!  Unable to add camera!"); 
-            return;
-        }
-  
-        if( !mScene ){
-            logCritical("No scene active!  Unable to find camera!");
-            return;
-        }   
-
-        if( !(temp = mScene->getCamera(name)) ){
-            logCritical("No camera found with name: " + name);
-            return;
-        }
-
-        if( viewport ){
-            return;
-        } else {
-            logNormal("Setting viewport");
-            viewport = window->addViewport(temp);
-        }
-    }*/
-    
     void Core::windowClosed(RenderWindow* rw){
     
         rendering = false;

@@ -21,7 +21,7 @@ start() ->
 
     Ball = {"Ball", "entity", [{"shape", "cube"},
                                {"scale", {0.1, 0.1, 0.1}},
-                               {"mass", 1.0},
+                               {"mass", 100.0},
                                {"position", {0.0, 60.0, 0.0}},
                                {"material", "Examples/BumpyMetal"}]},
 
