@@ -96,6 +96,8 @@ namespace Ymir {
    
             static Ymir::Core* getSingletonPtr(); 
 
+            friend class EventManager;
+
             friend class SceneBlueprint;
 
             friend class TerrainBlueprint;

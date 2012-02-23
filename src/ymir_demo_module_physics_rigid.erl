@@ -20,10 +20,16 @@ start() ->
                                    {"material", "Examples/Rockwall"}]},
 
     Ball = {"Ball", "entity", [{"shape", "cube"},
-                               {"scale", {0.1, 0.1, 0.1}},
-                               {"mass", 100.0},
-                               {"position", {0.0, 60.0, 0.0}},
+                               {"scale", {0.10, 0.10, 0.10}},
+                               {"mass", 200.0},
+                               {"position", {10.0, 60.0, 10.0}},
                                {"material", "Examples/BumpyMetal"}]},
+
+    %Ball2 = {"Ball2", "entity", [{"shape", "cube"},
+    %                           {"scale", {0.1, 0.1, 0.1}},
+    %                           {"mass", 400.0},
+    %                           {"position", {5.0, 80.0, 5.0}},
+    %                           {"material", "Examples/BumpyMetal"}]},
 
     Camera = { "Camera", "camera", [{"position", {0.0, 30.0, 65.0}},
                                     {"lookAt", {0.0, 0.0, 0.0}},
@@ -33,7 +39,7 @@ start() ->
 
     Scene = { title(), "scene", [{"ambient", {0.5, 0.5, 0.5, 1.0}},
                                  {"debug", true},
-                                 {"gravity", {0.0, -9.8, 0.0}},
+                                 {"gravity", {0.0, -10.0, 0.0}},
                                  {"viewport", "Camera"},
                                  {"objects", [Light, Ground, Ball, Camera]}] },
 
@@ -45,10 +51,10 @@ stop() ->
 mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
 mouse_rotate(_Key, _Val, Offset) -> Offset.
 
-position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
-position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
-position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
-position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
+position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0}; 
+position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0};
+position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 1.0, DY, DZ};
+position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 1.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
 
 position(State) when is_record(State, eventState) ->

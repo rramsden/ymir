@@ -204,10 +204,6 @@ namespace Ymir {
 
         Ogre::WindowEventUtilities::messagePump();  
        
-        //Step the physics sim
-       
-        mDynamicsWorld->stepSimulation(1/60.f, 10);
-        mDebugDrawer->step();
         root->renderOneFrame();
       
         return 0;

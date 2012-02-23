@@ -374,7 +374,8 @@ namespace Ymir {
         return (int) mJoysticks.size();
     }*/
     bool EventManager::frameStarted( const Ogre::FrameEvent &e ){
-     
+        Core* core = Core::getSingletonPtr();
+
         this->capture();
     
         //Perform the tasks in our queue
@@ -387,6 +388,12 @@ namespace Ymir {
    
         mTasks.clear();
         mLock.unlock();
+
+        //Update the physics simulation
+        if( core->mDynamicsWorld ){
+            core->mDynamicsWorld->stepSimulation(e.timeSinceLastFrame, 10);
+            core->mDebugDrawer->step();
+        } 
 
         itEventListener    = mEventListeners.begin();
         itEventListenerEnd = mEventListeners.end();

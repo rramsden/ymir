@@ -133,6 +133,15 @@ throttle( _Desired, _Actual, State ) ->
     State#demoState{high_start = {0,0,0},
                     low_start = {0,0,0}}.
 
+remove_outstanding() ->
+    receive
+        Msg ->
+            remove_outstanding()
+       
+    after 50 ->
+        ok
+    end.
+
 %%%% gen_server bits
 
 %%Every 8 frames determine the render time on the C Side
@@ -160,7 +169,9 @@ handle_call( {unload_demo, Module}, _From, State ) ->
 
     %%Disable render calls - This prevents the C side from
     %% getting flooded while loading big scenes.
-    %{ok, cancel} = timer:cancel(State#demoState.renderTimer),
+    {ok, cancel} = timer:cancel(State#demoState.renderTimer),
+
+    remove_outstanding(),
 
     %F = fun(D, {Buttons, Actions}) -> 
   
@@ -187,7 +198,10 @@ handle_call( {load_demo, Module}, _From, State ) ->
     %%Disable render calls - This prevents the C side from
     %% getting flooded while loading big scenes.
     {ok, cancel} = timer:cancel(State#demoState.renderTimer),
-    
+   
+    %%Drain any outstanding messages
+    remove_outstanding(),
+
     %%Let things quiet a bit (on the C side)
     timer:sleep(50),
 
