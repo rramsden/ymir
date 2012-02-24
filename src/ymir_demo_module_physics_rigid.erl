@@ -20,16 +20,16 @@ start() ->
                                    {"material", "Examples/Rockwall"}]},
 
     Ball = {"Ball", "entity", [{"shape", "cube"},
-                               {"scale", {0.10, 0.10, 0.10}},
-                               {"mass", 200.0},
+                               {"scale", {0.1, 0.1, 0.1}},
+                               {"mass", 100.0},
                                {"position", {10.0, 60.0, 10.0}},
                                {"material", "Examples/BumpyMetal"}]},
 
-    %Ball2 = {"Ball2", "entity", [{"shape", "cube"},
-    %                           {"scale", {0.1, 0.1, 0.1}},
-    %                           {"mass", 400.0},
-    %                           {"position", {5.0, 80.0, 5.0}},
-    %                           {"material", "Examples/BumpyMetal"}]},
+    Ball2 = {"Ball2", "entity", [{"shape", "cube"},
+                               {"scale", {0.1, 0.1, 0.1}},
+                               {"mass", 400.0},
+                               {"position", {5.0, 80.0, 5.0}},
+                               {"material", "Examples/BumpyMetal"}]},
 
     Camera = { "Camera", "camera", [{"position", {0.0, 30.0, 65.0}},
                                     {"lookAt", {0.0, 0.0, 0.0}},
@@ -39,9 +39,9 @@ start() ->
 
     Scene = { title(), "scene", [{"ambient", {0.5, 0.5, 0.5, 1.0}},
                                  {"debug", true},
-                                 {"gravity", {0.0, -10.0, 0.0}},
+                                 {"gravity", {0.0, -9.8, 0.0}},
                                  {"viewport", "Camera"},
-                                 {"objects", [Light, Ground, Ball, Camera]}] },
+                                 {"objects", [Light, Ground, Ball, Ball2, Camera]}] },
 
     ymir_demo:core_call({create, [Scene]}).
 
