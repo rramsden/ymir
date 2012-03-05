@@ -47,8 +47,37 @@ namespace Ymir {
         BtOgre::RigidBodyState* state;
     } RigidObjectInfo; 
 
-    typedef std::pair<btCollisionShape*, btCollisionObject*> RigidObject;
-    typedef std::pair<RigidObject, BtOgre::RigidBodyState*> RigidObjectState;
+    class RigidBodyState{
+
+        public:
+            RigidBodyState() : 
+                shape(NULL), 
+                body(NULL), 
+                bodyState(NULL)
+            {
+            
+            }
+            
+            ~RigidBodyState(){
+            
+                if( shape ){
+                    delete shape;
+                }
+
+                if( body ){
+                    delete body;
+                }
+
+                if( bodyState ){
+                    delete bodyState;
+                }
+            }
+
+            //Physics state
+            btCollisionShape* shape;
+            btRigidBody* body;
+            BtOgre::RigidBodyState* bodyState;
+    };
 
     class Core : public WindowEventListener 
     {
@@ -109,6 +138,8 @@ namespace Ymir {
             template<class T>
             friend class MyGUIBlueprint;
 
+            friend class AnimateEntityBlueprint;
+
         protected:
             Core();
 
@@ -147,7 +178,7 @@ namespace Ymir {
             BtOgre::DebugDrawer* mDebugDrawer;
             btDiscreteDynamicsWorld* mDynamicsWorld;
 
-            std::map<std::string, RigidObjectInfo> mRigidObjects;
+            std::map<std::string, RigidBodyState> mRigidObjects;
 
             static Core* core;
     };

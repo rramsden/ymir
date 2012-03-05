@@ -9,6 +9,7 @@
 
 #include "Task.h"
 #include "EventListener.h"
+#include "AnimateEntity.h"
 
 namespace Ymir {
     class EventManager : public EventListener {
@@ -24,6 +25,9 @@ namespace Ymir {
         bool frameEnded( const Ogre::FrameEvent &e );
     
         void monitor(MyGUI::Widget* widget);
+        void monitor(AnimateEntity* ent);
+
+        AnimateEntity* removeEntity(std::string& id);
     
         void queueTask( Ymir::Task* task );
     
@@ -102,7 +106,8 @@ namespace Ymir {
         OIS::InputManager *mInputSystem;
    
         boost::mutex mLock;
-        std::vector<Ymir::Task*> mTasks; 
+        std::vector<Ymir::Task*> mTasks;
+        std::map<std::string, Ymir::AnimateEntity*> mEntities; 
         /*std::vector<OIS::JoyStick*> mJoysticks;
         std::vector<OIS::JoyStick*>::iterator itJoystick;
         std::vector<OIS::JoyStick*>::iterator itJoystickEnd;*/

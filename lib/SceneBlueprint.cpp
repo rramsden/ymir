@@ -201,17 +201,7 @@ namespace Ymir{
         core->logNormal("Destroying bullet simulation...");
 
         //Destroy all tracked physics objects
-        std::map<std::string, RigidObjectInfo>::iterator it;
-        for( it=core->mRigidObjects.begin(); it != core->mRigidObjects.end(); it++ )
-        {
-            core->logNormal("Deleting physics state for: " + it->first);
-            
-            delete it->second.shape;
-            delete it->second.body;
-            delete it->second.state;
-        }
         core->mRigidObjects.clear();
-
 
         if( core->mDynamicsWorld ){
             delete core->mDynamicsWorld;

@@ -15,10 +15,11 @@ namespace Ymir {
     class NodeInfo {
 
         public:
-            NodeInfo(SceneNode* node, T* obj, btRigidBody* rbody) : 
-                mNode(node), mObject(obj), mRigidBody(rbody) {}
+            NodeInfo(SceneManager* scene, SceneNode* node, T* obj, btRigidBody* rbody) : 
+                mScene(scene), mNode(node), mObject(obj), mRigidBody(rbody) {}
             ~NodeInfo(){}
 
+            SceneManager* mScene;
             SceneNode* mNode;
             T* mObject;
             btRigidBody* mRigidBody;
@@ -47,7 +48,7 @@ namespace Ymir {
                 //TODO: Run through object options and configure the object
 
                 //Finally create the physics object from the positioned object
-                btCollisionShape* shape = createPhysicsObject(obj);
+                btCollisionShape* shape = createPhysicsObject(obj, props);
                 btRigidBody* body = NULL;
                 btScalar mass = 0;
                 btVector3 inertia;
@@ -62,13 +63,18 @@ namespace Ymir {
                 body = new btRigidBody(mass, state, shape, inertia);
                 
                 core->mDynamicsWorld->addRigidBody(body);
-            
-                RigidObjectInfo info = {shape, body, state};
-                core->mRigidObjects[id] = info; 
+           
+                //Setup object state 
+                RigidBodyState* objState = 
+                    &(core->mRigidObjects[id] = RigidBodyState());
 
+                objState->shape = shape;
+                objState->body = body;
+                objState->bodyState = state;
+                
                 //TODO: Attach child objects
                 //Set the properties of the object
-                NodeInfo<T> tuple(node, obj, body);
+                NodeInfo<T> tuple(scene, node, obj, body);
                 set(&tuple, props);
 
                 updatePhysics(&tuple, props);
@@ -87,7 +93,7 @@ namespace Ymir {
                 
                 SceneNode* node = obj->getParentSceneNode();
 
-                NodeInfo<T> tuple(node, obj, body);
+                NodeInfo<T> tuple(scene, node, obj, body);
                 set(&tuple, props);
 
                 updatePhysics(&tuple, props);
@@ -156,8 +162,6 @@ namespace Ymir {
                 t->mRigidBody->getCollisionShape()
                     ->calculateLocalInertia(mass, inertia);
 
-
-
                 t->mRigidBody->setMassProps(mass, inertia);
             }
 
@@ -181,7 +185,7 @@ namespace Ymir {
            ~NodeBlueprint(){} 
 
             virtual T* createOgreObject( std::string&, Ymir::PropList&, SceneManager* ) = 0;
-            virtual btCollisionShape* createPhysicsObject(T* obj) { 
+            virtual btCollisionShape* createPhysicsObject(T* obj, PropList& props) { 
                 Core::getSingletonPtr()->logNormal("Creating empty shape!");
                 return new btEmptyShape; }
             virtual T* findOgreObject( std::string&, SceneManager* ) = 0;
@@ -193,7 +197,6 @@ namespace Ymir {
                 Vector3 pos = node->getPosition();
                 Vector3 scale = node->getScale();
                 Quaternion orient = node->getOrientation();
-                btScalar mass = 0;
                 btVector3 inertia(0,0,0);
                 btTransform trans;
 

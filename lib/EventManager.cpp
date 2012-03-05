@@ -14,6 +14,7 @@ namespace Ymir {
         mInputSystem( 0 ),
         mLock(),
         mTasks(),
+        mEntities(),
         mEventListeners(),
         itTask(),
         itEventListener(),
@@ -389,6 +390,12 @@ namespace Ymir {
         mTasks.clear();
         mLock.unlock();
 
+        //Have ever animate entity update themselves
+        std::map<std::string, Ymir::AnimateEntity*>::iterator itEnt;
+        for(itEnt = mEntities.begin(); itEnt != mEntities.end(); itEnt++){
+            itEnt->second->update(e.timeSinceLastFrame);
+        }
+
         //Update the physics simulation
         if( core->mDynamicsWorld ){
             core->mDynamicsWorld->stepSimulation(e.timeSinceLastFrame, 10);
@@ -440,7 +447,28 @@ namespace Ymir {
         widget->eventKeyButtonReleased += (em, &EventManager::keyReleased);
         */
     }
-    
+   
+    void EventManager::monitor(AnimateEntity* ent){
+        mEntities[ent->getID()] = ent;
+    }
+
+    AnimateEntity* EventManager::removeEntity(std::string& id){
+        std::map<std::string, AnimateEntity*>::iterator it;
+        AnimateEntity* out = NULL;
+
+        it = mEntities.find(id);
+        if( it != mEntities.end() ){
+            
+            mEntities.erase(it);
+
+            out = it->second;
+        }
+
+        return out;
+    }
+
+    //void EventManager::remove(){}
+
     bool EventManager::keyPressed( const OIS::KeyEvent &e ){
         itEventListener = mEventListeners.begin();
         itEventListenerEnd = mEventListeners.end();

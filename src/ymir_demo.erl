@@ -286,7 +286,7 @@ init(State) ->
 
     process_flag( trap_exit, true ),
 
-    io:format("Loding ymir_core library..~n"),
+    io:format("Loading ymir_core library..~n"),
 
     {ok, _Time} = gen_server:call(ogre_manager, {load, ymir_core}),
  

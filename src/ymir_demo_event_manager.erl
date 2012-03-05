@@ -148,7 +148,6 @@ process_action({guiMouseButtonClick, Name}, Action, State) ->
 %     end;
      
 process_action(Something, _Val, State) ->
-    io:format("What?  ~p~n", [Something]),
     State.
         
 %%handle_event(frameStarted, State) ->
@@ -171,8 +170,17 @@ handle_event({keyReleased, Key}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,
     Mouse = State#eventState.mouse,
 
-    {ok, State#eventState{ keyboard = dict:store(Key, false, Keyboard), 
-                           mouse = Mouse }};
+    %%Is a keyReleased hook defined for this key?
+    NewState = case dict:find({keyReleased, Key}, State#eventState.actions) of
+                {ok, Action} ->
+                    Action(State); 
+                
+                _Undef ->
+                    State
+               end, 
+
+    {ok, NewState#eventState{ keyboard = dict:store(Key, false, Keyboard), 
+                              mouse = Mouse }};
 
 handle_event({mousePressed,{Key, _Pos}}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,

@@ -15,7 +15,8 @@ namespace Ymir {
             Terrain,
             Camera,
             Light, 
-            Entity,
+            StaticEntity,
+            AnimateEntity,
             Window,
             Button,
             Max

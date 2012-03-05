@@ -154,7 +154,8 @@ namespace Ymir {
                     BPEntry("caption", BPFP(&decodeString, (setFP)&setCaption)) );
             
             }
-
     };
+
+
 }
 #endif

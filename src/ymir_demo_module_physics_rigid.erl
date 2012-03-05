@@ -13,19 +13,19 @@ start() ->
      %%Generate some objects
     Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
                                  {"source", "point"} ]},
-    Ground = {"Ground", "entity", [{"shape", "cube"},
+    Ground = {"Ground", "static_entity", [{"shape", "cube"},
                                    {"mass", 0.0},
                                    {"orientation", {0.0, 0.0, 0.0, 1.0}}, 
                                    {"scale", {1.0, 0.05, 1.0}},
                                    {"material", "Examples/Rockwall"}]},
 
-    Ball = {"Ball", "entity", [{"shape", "cube"},
+    Ball = {"Ball", "static_entity", [{"shape", "cube"},
                                {"scale", {0.1, 0.1, 0.1}},
                                {"mass", 100.0},
                                {"position", {10.0, 60.0, 10.0}},
                                {"material", "Examples/BumpyMetal"}]},
 
-    Ball2 = {"Ball2", "entity", [{"shape", "cube"},
+    Ball2 = {"Ball2", "static_entity", [{"shape", "cube"},
                                {"scale", {0.1, 0.1, 0.1}},
                                {"mass", 400.0},
                                {"position", {5.0, 80.0, 5.0}},

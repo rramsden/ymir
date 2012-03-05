@@ -5,7 +5,8 @@
 #include "TerrainBlueprint.h"
 #include "CameraBlueprint.h"
 #include "LightBlueprint.h"
-#include "EntityBlueprint.h"
+#include "StaticEntityBlueprint.h"
+#include "AnimateEntityBlueprint.h"
 
 //GUI blueprints
 #include "ButtonBlueprint.h"
@@ -20,7 +21,8 @@ static SceneBlueprint mSceneBlueprint;
 static TerrainBlueprint mTerrainBlueprint;
 static CameraBlueprint mCameraBlueprint;
 static LightBlueprint mLightBlueprint;
-static EntityBlueprint mEntityBlueprint;
+static StaticEntityBlueprint mStaticEntityBlueprint;
+static AnimateEntityBlueprint mAnimateEntityBlueprint;
 static ButtonBlueprint mButtonBlueprint;
 //Ymir::WindowBlueprint mWindowBlueprint;
 
@@ -46,8 +48,12 @@ int ObjectFactory::decode( const char* data, int* idx, Object::Type type, PropLi
             rc = mLightBlueprint.decodePropList(data, idx, props);
             break;
 
-        case Object::Entity:
-            rc = mEntityBlueprint.decodePropList(data, idx, props);
+        case Object::StaticEntity:
+            rc = mStaticEntityBlueprint.decodePropList(data, idx, props);
+            break;
+
+        case Object::AnimateEntity:
+            rc = mAnimateEntityBlueprint.decodePropList(data, idx, props);
             break;
 
         case Object::Button:
@@ -78,8 +84,10 @@ int decodeType( const char* data, int* idx, Object::Type* output ){
             *output = Ymir::Object::Camera;
         } else if( type == "light" ){
             *output = Ymir::Object::Light;
-        } else if( type == "entity" ){
-            *output = Ymir::Object::Entity;
+        } else if( type == "static_entity" ){
+            *output = Ymir::Object::StaticEntity;
+        } else if( type == "animate_entity" ){
+            *output = Ymir::Object::AnimateEntity;
         } else if( type == "window" ){
             *output = Ymir::Object::Window;
         } else if( type == "button" ){
@@ -156,8 +164,12 @@ void ObjectFactory::create( std::string& objectID,
             mLightBlueprint.create(objectID, props);
             break;
 
-        case Object::Entity:
-            mEntityBlueprint.create(objectID, props);
+        case Object::StaticEntity:
+            mStaticEntityBlueprint.create(objectID, props);
+            break;
+
+        case Object::AnimateEntity:
+            mAnimateEntityBlueprint.create(objectID, props);
             break;
 
         case Object::Button:
@@ -194,8 +206,12 @@ void ObjectFactory::update( std::string& objectID,
             mLightBlueprint.update(objectID, props);
             break;
 
-        case Object::Entity:
-            mEntityBlueprint.update(objectID, props);
+        case Object::StaticEntity:
+            mStaticEntityBlueprint.update(objectID, props);
+            break;
+
+        case Object::AnimateEntity:
+            mAnimateEntityBlueprint.update(objectID, props);
             break;
 
         case Object::Button:
@@ -232,8 +248,12 @@ void ObjectFactory::destroy( std::string& objectID,
             mLightBlueprint.destroy(objectID, props);
             break;
 
-        case Object::Entity:
-            mEntityBlueprint.destroy(objectID, props);
+        case Object::StaticEntity:
+            mStaticEntityBlueprint.destroy(objectID, props);
+            break;
+
+        case Object::AnimateEntity:
+            mAnimateEntityBlueprint.destroy(objectID, props);
             break;
 
         case Object::Button:

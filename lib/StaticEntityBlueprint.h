@@ -1,5 +1,5 @@
-#ifndef _ENTITYBLUPRINT_H
-#define _ENTITYBLUPRINT_H
+#ifndef _STATICENTITYBLUPRINT_H
+#define _STATICENTITYBLUPRINT_H
 
 #include <OgreEntity.h>
 
@@ -7,11 +7,11 @@
 
 namespace Ymir {
 
-    class EntityBlueprint : public NodeBlueprint<Ogre::Entity> {
+    class StaticEntityBlueprint : public NodeBlueprint<Ogre::Entity> {
 
         public:
-            EntityBlueprint();
-            ~EntityBlueprint(){}
+            StaticEntityBlueprint();
+            ~StaticEntityBlueprint(){}
 
             static int decodePrefabType(const char*, int*, boost::any*);
 
@@ -23,7 +23,7 @@ namespace Ymir {
                                      Ymir::PropList&,
                                      Ogre::SceneManager*);
 
-            btCollisionShape* createPhysicsObject( Entity* ent );
+            btCollisionShape* createPhysicsObject( Entity* ent, PropList& props );
 
             Ogre::Entity* findOgreObject( std::string& id, 
                                           Ogre::SceneManager* scene);

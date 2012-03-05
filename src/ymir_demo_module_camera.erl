@@ -15,7 +15,7 @@ start() ->
      
     Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
                                  {"source", "point"} ]},
-    Head = {"Head", "entity", [{"mesh", "ogrehead.mesh"}]},
+    Head = {"Head", "static_entity", [{"mesh", "ogrehead.mesh"}]},
     Camera = { "Camera", "camera", [{"position", {0.0, 0.0, 80.0}},
                                     {"lookAt", {0.0, 0.0, -300.0}},
                                     {"nearClip", 5.0},
