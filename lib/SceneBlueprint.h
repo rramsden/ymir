@@ -1,6 +1,7 @@
 #ifndef _SCENEBLUEPRINT_H
 #define _SCENEBLUEPRINT_H
 
+#include <OgreCommon.h>
 #include "OgreBlueprint.h"
 
 namespace Ymir {
@@ -21,13 +22,22 @@ class SceneBlueprint : public OgreBlueprint {
         static int decodeSceneType( const char*, int*, boost::any* ); 
         static int decodeObject( const char*, int*, boost::any* );
         static int decodeObjects( const char*, int*, boost::any* );
+        static int decodeFog( const char*, int*, boost::any* );
 
-        //static void setFog( Ogre::SceneManager*, boost::any& );
         static void setAmbient( Ogre::SceneManager*, boost::any& );
+        static void setFog( Ogre::SceneManager*, boost::any& );
         static void setDebug( Ogre::SceneManager*, boost::any& );
         static void setGravity( Ogre::SceneManager*, boost::any& );
 
     protected:
+        typedef struct {
+            Ogre::FogMode mode;
+            Ogre::ColourValue color;
+            Ogre::Real density;
+            Ogre::Real lStart;
+            Ogre::Real lEnd;
+        } Fog;
+
         void createSceneManager( std::string& id, PropList& props );
         void createPhysicsSim( PropList& props );
         void createViewport( std::string& id, PropList& props );

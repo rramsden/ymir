@@ -14,17 +14,14 @@ namespace Ymir{
         mBlueprint["type"] = BPFP(&decodeSceneType, NULL);
         mBlueprint["terrain"] = BPFP(&decodeTerrain,  NULL);
         mBlueprint["objects"] = BPFP(&SceneBlueprint::decodeObjects, NULL);
-        
         mBlueprint["ambient"] = BPFP(&decodeColourVal, (setFP)&setAmbient);
         mBlueprint["viewport"] = BPFP(&decodeString, NULL);
-
-        mBlueprint["debug"] = BPFP(&decodeBool, (setFP)&setDebug);
-        mBlueprint["gravity"] = BPFP(&decodeVector3, (setFP)&setGravity);
-
-        //mBlueprint["fog"] = BPFP(&decodeFog, (setFP)&setFog);
+        mBlueprint["fog"] = BPFP(&decodeFog, (setFP)&setFog);
+        mBlueprint["backgroundColour"] = BPFP(&decodeColourVal, NULL);
 
         //Physics properties
-
+        mBlueprint["debug"] = BPFP(&decodeBool, (setFP)&setDebug);
+        mBlueprint["gravity"] = BPFP(&decodeVector3, (setFP)&setGravity);
 
     }
 
@@ -68,6 +65,7 @@ namespace Ymir{
 
     void SceneBlueprint::createViewport(std::string& id, PropList& props){
         Core* core = Core::getSingletonPtr();
+        Ogre::ColourValue bColour = Ogre::ColourValue::Black;
         std::string cameraID = id + "_camera";
         std::list<Object>::iterator it;
         std::list<Object> objects;
@@ -95,7 +93,10 @@ namespace Ymir{
         
         //Fetch the camera and create the viewport
         Camera* camera = core->mScene->getCamera(cameraID);
-        core->viewport = core->window->addViewport(camera); 
+        core->viewport = core->window->addViewport(camera);
+
+        props.hasProperty<Ogre::ColourValue>("backgroundColour", &bColour);
+        core->viewport->setBackgroundColour(bColour);
     }
 
     void SceneBlueprint::createGUI(){
@@ -305,9 +306,57 @@ namespace Ymir{
         return 0;
     }
 
-    /*void SceneBlueprint::setFog( Ogre::SceneManager* scene, boost::any& fog){
-        scene->setFog();
-    }*/
+    int decodeFogMode( const char* data, 
+                       int* idx,
+                       Ogre::FogMode* out )
+    {
+        std::string temp;
+
+        if( Ymir::decodeString(data, idx, &temp) ){
+            return -EINVAL;
+        }
+
+        if( temp == "exp" ){
+            *out = Ogre::FOG_EXP;
+        } else if( temp == "exp2" ){
+            *out = Ogre::FOG_EXP2;
+        } else if( temp == "linear" ){
+            *out = Ogre::FOG_LINEAR;
+        } else {
+            *out = Ogre::FOG_NONE;
+        }
+        
+        return 0; 
+    }
+
+    int SceneBlueprint::decodeFog( const char* data,
+                                   int* idx, 
+                                   boost::any* out )
+    {
+        int arity;
+        Fog temp;
+
+        if( ei_decode_tuple_header(data, idx, &arity) ||
+            (arity != 5) ||
+            decodeFogMode(data, idx, &(temp.mode)) ||
+            decodeColourVal(data, idx, &(temp.color)) ||
+            decodeReal(data, idx, &(temp.density)) ||
+            decodeReal(data, idx, &(temp.lStart)) ||
+            decodeReal(data, idx, &(temp.lEnd)) )
+        {
+            return -EINVAL;
+        }
+       
+        *out = temp; 
+        
+        return 0;
+    }
+
+    void SceneBlueprint::setFog( Ogre::SceneManager* scene, boost::any& fog){
+        Fog temp = boost::any_cast<Fog>(fog);
+        
+        scene->setFog(temp.mode, temp.color, temp.density, temp.lStart, temp.lEnd);
+    }
 
     void SceneBlueprint::setAmbient(Ogre::SceneManager* scene, boost::any& val){
         scene->setAmbientLight(boost::any_cast<Ogre::ColourValue>(val));
