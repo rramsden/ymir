@@ -306,7 +306,14 @@ GEN_CNODE_DEFINE(rayCast){
 
     //Sort by distance
     query->setSortByDistance(true);
-    query->setWorldFragmentType(Ogre::SceneQuery::WFT_SINGLE_INTERSECTION);
+
+    try{
+        query->setWorldFragmentType(Ogre::SceneQuery::WFT_SINGLE_INTERSECTION);
+    } 
+    
+    catch(...) {
+         
+    }
 
     //Execute the query
     Ogre::RaySceneQueryResult& res = query->execute();
@@ -324,8 +331,9 @@ GEN_CNODE_DEFINE(rayCast){
 
         if( res[i].movable ){
 
-           gen_cnode_format(resp, "{~s, ~f, {~f, ~f, ~f}}", 
+           gen_cnode_format(resp, "{~s, ~s, ~f, {~f, ~f, ~f}}", 
                              res[i].movable->getName().c_str(),
+                             res[i].movable->getMovableType().c_str(),
                              (float)res[i].distance,
                              (float)temp.x,
                              (float)temp.y,

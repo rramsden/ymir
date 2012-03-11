@@ -43,6 +43,7 @@ namespace Ymir {
             static void setCameraZoom(AnimateEntity*, boost::any&);
 
             static void setMove(AnimateEntity*, boost::any&);
+            static void setMoveTo(AnimateEntity*, boost::any&);
             static void setMoveSpeed(AnimateEntity*, boost::any&);
             static void setTurnSpeed(AnimateEntity*, boost::any&);
 

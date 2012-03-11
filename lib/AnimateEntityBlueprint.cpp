@@ -9,6 +9,7 @@ AnimateEntityBlueprint::AnimateEntityBlueprint() : OgreBlueprint(){
     mBlueprint["mesh"] = BPFP(&decodeString, NULL);
     mBlueprint["position"] = BPFP(&decodeVector3, (setFP)&setPosition);
     mBlueprint["move"] = BPFP(&decodeVector3, (setFP)&setMove);
+    mBlueprint["moveTo"] = BPFP(&decodeVector3, (setFP)&setMoveTo);
     mBlueprint["camera"] = BPFP(&decodeString, (setFP)&setCamera);
     mBlueprint["cameraGoal"] = BPFP(&decodeVector3, (setFP)&setCameraGoal);
     mBlueprint["cameraDistance"] = BPFP(&decodeReal, (setFP)&setCameraZoom);
@@ -229,6 +230,14 @@ void AnimateEntityBlueprint::setMove(AnimateEntity* ent,
                                      boost::any& goal)
 {
     ent->mGoalPosition += boost::any_cast<Ogre::Vector3>(goal);
+}
+
+void AnimateEntityBlueprint::setMoveTo(AnimateEntity* ent,
+                                       boost::any& pos)
+{
+    Ogre::Vector3 temp = boost::any_cast<Ogre::Vector3>(pos);
+
+    ent->mGoalPosition = Vector3(temp.x, ent->mGoalPosition.y, temp.z);
 }
 
 void AnimateEntityBlueprint::setMoveSpeed(AnimateEntity* ent,

@@ -44,10 +44,7 @@ namespace Ymir {
 
     void AnimateEntity::updateEntity(Ogre::Real dt){
     
-        Core::getSingletonPtr()->logNormal("position:  " + StringConverter::toString(mPosition) +
-                                           ", goal: " + StringConverter::toString(mGoalPosition));
-
-        //If we haven't reached our destination move 
+          //If we haven't reached our destination move 
         if( (mGoalPosition.x != mPosition.x) ||
             (mGoalPosition.z != mPosition.z) )
         {
@@ -64,25 +61,33 @@ namespace Ymir {
             }
 
             if( yawToGoal < 0 ){
-                yawToGoal = std::min<Ogre::Real>(0, std::max<Ogre::Real>(yawToGoal, yawAtSpeed));
+                yawToGoal = std::min<Ogre::Real>(0.0f, std::max<Ogre::Real>(yawToGoal, yawAtSpeed));
             } else if( yawToGoal > 0 ){
-                yawToGoal = std::max<Ogre::Real>(0, std::min<Ogre::Real>(yawToGoal, yawAtSpeed));
+                yawToGoal = std::max<Ogre::Real>(0.0f, std::min<Ogre::Real>(yawToGoal, yawAtSpeed));
             }
 
             mNode->yaw(Degree(yawToGoal));
 
+
+      Core::getSingletonPtr()->logNormal("position:  " + StringConverter::toString(mPosition) +
+
+                                           ", goal: " + StringConverter::toString(mGoalPosition) + 
+                                           ", yawToGoal: " + StringConverter::toString(yawToGoal));
+
+            if( Math::RealEqual(yawToGoal, 0.0f, .001f) ){
             mNode->translate(0,0, dt * mMoveSpeed, Ogre::Node::TS_LOCAL);
 
             //Update stored position
-            mPosition = mNode->getPosition();   
+            mPosition = mNode->getPosition();  
 
             //If we moved passed our mark, put ourselves at the dest
-            if( mPosition > mGoalPosition ){
+            if( mPosition.positionEquals(mGoalPosition) ) 
+            {
                 mPosition = mGoalPosition;
                 mNode->setPosition(mGoalPosition);
             }
+            }
         }
-
     }
 
     void AnimateEntity::updateCamera(Ogre::Real dt){

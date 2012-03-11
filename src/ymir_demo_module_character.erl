@@ -92,11 +92,24 @@ position_offset(_Key, _Val, Offset) -> Offset.
  %           []
 %    end.
 
+move_if_ground([{"Ground", _Type, _Dist, Pos} | _T]) ->
+    io:format("Moving to: ~p~n", [Pos]),
+    
+    gen_server:call(ymir_demo, {core, { update,
+                                            [{"Sinbad", 
+                                              "animate_entity",
+                                               [{"moveTo", Pos}] }]}} );
+
+move_if_ground(_Else)-> [].
+
 move_to(State) when is_record(State, eventState) ->
 
     {{Ax, _Rx}, {Ay, _Ry}, _Dz} = dict:fetch(current, State#eventState.mouse),
     case ymir_demo:core_call({rayCast, [(Ax * 1.0), (Ay * 1.0)]}) of
-        {ok, Objects} -> io:format("Got: ~p~n", [Objects]), [];
+        Objects when is_list(Objects) -> io:format("Got: ~p~n", [Objects]), 
+        Ents = [X || X <- Objects, element(2, X) == "Entity"],
+        move_if_ground(Ents);
+
         Else -> io:format("Not right:  ~p~n", [Else]), []
     end.
 
@@ -105,7 +118,7 @@ position(State) when is_record(State, eventState) ->
     case dict:find( ?MB_LEFT, State#eventState.mouse ) of
         {ok, true} ->
             move_to(State);
-        _else ->
+        _Else ->
             []
     end,
 
@@ -124,8 +137,12 @@ zoom(State) when is_record(State, eventState) ->
     case dict:fetch( moved, State#eventState.mouse ) of
         true -> 
             {{_Ax, _Rx}, {_Ay, _Ry}, {_Az, Rz}} = dict:fetch(current, State#eventState.mouse),
-            Rot = {0.0, 0.0, Rz * -0.0005},
-            [{"cameraGoal", Rot}];
+            case Rz of
+                0 -> [];
+                _Else ->
+                    Rot = {0.0, 0.0, Rz * -0.0005},
+                    [{"cameraGoal", Rot}]
+            end;
 
         false -> 
             []
