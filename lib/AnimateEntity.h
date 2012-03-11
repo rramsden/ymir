@@ -23,9 +23,13 @@ namespace Ymir {
 
         protected:
             AnimateEntity(std::string& id);
+            
+            void updateEntity(Ogre::Real dt);
 
             void updateAnimations(Ogre::Real dt);
             void fadeAnimations(Ogre::Real dt);
+
+            void updateCamera(Ogre::Real dt);
 
             std::string mID;
             
@@ -34,6 +38,17 @@ namespace Ymir {
             Ogre::SceneNode* mNode;
             Ogre::Entity* mObject;
             
+            //Camera data
+            Ogre::SceneNode* mCameraNode;
+            Ogre::SceneNode* mCameraPivot; 
+            Ogre::SceneNode* mCameraGoal;
+
+            //Movement Options
+            Ogre::Vector3 mPosition; 
+            Ogre::Vector3 mGoalPosition;
+            Ogre::Real mMoveSpeed;
+            Ogre::Real mTurnSpeed;
+
             //Animation relevant data
             int mAnimationCount;
             int mAnimationFadeSpeed;

@@ -190,11 +190,16 @@ handle_event({mousePressed,{Key, _Pos}}, State) when is_record(State, eventState
                            mouse = dict:store(Key, true, Mouse) }};
 
 handle_event({mouseReleased, {Key, _Pos}}, State) when is_record(State, eventState) ->
-    Keyboard = State#eventState.keyboard,
-    Mouse = State#eventState.mouse,
 
-    {ok, State#eventState{ keyboard = Keyboard, 
-                           mouse = dict:store(Key, false, Mouse) }};
+    NewState = case dict:find({mouseReleased, Key}, State#eventState.actions) of
+                {ok, Action} ->
+                    Action(State);
+
+                _Undef ->
+                    State
+               end,
+
+    {ok, NewState#eventState{ mouse = dict:store(Key, false, NewState#eventState.mouse) }};
 
 handle_event({mouseMoved, Pos}, State) when is_record(State, eventState) ->
     Keyboard = State#eventState.keyboard,

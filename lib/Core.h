@@ -124,6 +124,9 @@ namespace Ymir {
 
             void windowClosed(RenderWindow* rw);
    
+            Ogre::RaySceneQuery* createRayQuery(Ogre::Real x, Ogre::Real y);
+            void destroyQuery( Ogre::SceneQuery* );
+
             static Ymir::Core* getSingletonPtr(); 
 
             friend class EventManager;

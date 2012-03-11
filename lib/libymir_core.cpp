@@ -288,6 +288,68 @@ GEN_CNODE_DEFINE(resetTimer){
     return 0;
 }
 
+GEN_CNODE_DEFINE(rayCast){
+    int idx = 0;
+    int size = 0;
+    float x, y;
+
+    if( decodeFloat(args, &idx, &x) ||
+        decodeFloat(args, &idx, &y) )
+    {
+        gen_cnode_format(resp, "{error, failed_to_decode}");
+        return -EINVAL;
+    }  
+
+    //Have Core perform the query generation
+    Ogre::RaySceneQuery* query = 
+        core->createRayQuery(Ogre::Real(x), Ogre::Real(y));
+
+    //Sort by distance
+    query->setSortByDistance(true);
+    query->setWorldFragmentType(Ogre::SceneQuery::WFT_SINGLE_INTERSECTION);
+
+    //Execute the query
+    Ogre::RaySceneQueryResult& res = query->execute();
+
+    size = res.size();
+    if( size ){
+
+        if( ei_x_encode_list_header(resp, size) ){
+            return -EINVAL;
+        }
+    }
+
+    for( int i = 0; i < size; i++ ){
+        Vector3 temp = query->getRay().getPoint(res[i].distance);
+
+        if( res[i].movable ){
+
+           gen_cnode_format(resp, "{~s, ~f, {~f, ~f, ~f}}", 
+                             res[i].movable->getName().c_str(),
+                             (float)res[i].distance,
+                             (float)temp.x,
+                             (float)temp.y,
+                             (float)temp.z);
+
+        } else if( res[i].worldFragment ){
+           gen_cnode_format(resp, "{~s, ~f, {~f, ~f, ~f}}", 
+                             "worldFragment",
+                             (float)res[i].distance,
+                             (float)res[i].worldFragment->singleIntersection.x,
+                             (float)res[i].worldFragment->singleIntersection.y,
+                             (float)res[i].worldFragment->singleIntersection.z);
+        } 
+    }
+
+    if( ei_x_encode_empty_list(resp) ){
+        return -EINVAL;
+    }
+
+    core->destroyQuery(query);
+
+    return 0;
+}
+
 /*GEN_CNODE_DEFINE(renderStart){
     int rc = 0;
 

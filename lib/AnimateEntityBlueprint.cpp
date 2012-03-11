@@ -8,6 +8,14 @@ AnimateEntityBlueprint::AnimateEntityBlueprint() : OgreBlueprint(){
 
     mBlueprint["mesh"] = BPFP(&decodeString, NULL);
     mBlueprint["position"] = BPFP(&decodeVector3, (setFP)&setPosition);
+    mBlueprint["move"] = BPFP(&decodeVector3, (setFP)&setMove);
+    mBlueprint["camera"] = BPFP(&decodeString, (setFP)&setCamera);
+    mBlueprint["cameraGoal"] = BPFP(&decodeVector3, (setFP)&setCameraGoal);
+    mBlueprint["cameraDistance"] = BPFP(&decodeReal, (setFP)&setCameraZoom);
+
+    mBlueprint["moveSpeed"] = BPFP(&decodeReal, (setFP)&setMoveSpeed);
+    mBlueprint["turnSpeed"] = BPFP(&decodeReal, (setFP)&setTurnSpeed);
+
     mBlueprint["animationFadeSpeed"] = 
         BPFP(&decodeFloat, (setFP)&setAnimationFadeSpeed);
     
@@ -63,11 +71,19 @@ void AnimateEntityBlueprint::create(std::string& id, PropList& props ){
         ent->mAnimationFadeOut[name] = false;
     }
 
+    //Create nodes for 3rd person view
+    ent->mCameraPivot = scene->getRootSceneNode()->createChildSceneNode();
+    ent->mCameraGoal = ent->mCameraPivot->createChildSceneNode(Vector3(0,0,15));
+
+    ent->mCameraPivot->setFixedYawAxis(true);
+    ent->mCameraGoal->setFixedYawAxis(true);
+
     //Set the remaining properties
     set(ent, props);
 
     //Update the physics components
     updatePhysics(ent);
+
 
     //Lastly, register the AnimateEntity with the event manager
     EventManager::getSingletonPtr()->monitor(ent);
@@ -205,6 +221,100 @@ void AnimateEntityBlueprint::setPosition(AnimateEntity* ent,
     Vector3 vPos = boost::any_cast<Vector3>(pos);
 
     ent->mNode->setPosition(vPos);
+
+    ent->mGoalPosition = vPos;
+}
+
+void AnimateEntityBlueprint::setMove(AnimateEntity* ent,
+                                     boost::any& goal)
+{
+    ent->mGoalPosition += boost::any_cast<Ogre::Vector3>(goal);
+}
+
+void AnimateEntityBlueprint::setMoveSpeed(AnimateEntity* ent,
+                                          boost::any& sp)
+{
+    ent->mMoveSpeed = boost::any_cast<Ogre::Real>(sp);
+}
+
+void AnimateEntityBlueprint::setTurnSpeed(AnimateEntity* ent,
+                                          boost::any& ts)
+{
+    ent->mTurnSpeed = boost::any_cast<Ogre::Real>(ts);
+}
+
+void AnimateEntityBlueprint::setCamera(AnimateEntity* ent, 
+                                       boost::any& id)
+{
+    std::string camID = boost::any_cast<std::string>(id);
+    Ogre::Camera* cam = ent->mScene->getCamera(camID);
+    Ogre::SceneNode* camNode = cam->getParentSceneNode();
+
+    //This camera is now ours
+    ent->mCameraNode = camNode;
+
+    //Reset the position of camera, otherwise its offset 
+    //will affect desired behavior
+    cam->setPosition(Vector3(0,0,0));
+
+    //Place the camera about the character
+    Vector3 pos = ent->mCameraPivot->getPosition() + ent->mCameraGoal->getPosition();
+    ent->mCameraNode->setPosition(pos);
+
+    //Camera node will track the pivot as it orbits the character
+    ent->mCameraNode->setFixedYawAxis(true);
+    ent->mCameraNode->setAutoTracking(true, ent->mCameraPivot);
+}
+
+void AnimateEntityBlueprint::setCameraGoal(AnimateEntity* ent,
+                                           boost::any& vec)
+{
+    Ogre::Vector3 delta = boost::any_cast<Ogre::Vector3>(vec);
+    Ogre::Quaternion qt = ent->mCameraPivot->getOrientation();
+    Ogre::Real pitch = qt.getPitch().valueDegrees();
+
+    //Yaw is unbounded
+    ent->mCameraPivot->yaw(Degree(delta.y), Ogre::Node::TS_LOCAL);
+
+    //Bound pitch
+    if( !(((pitch + delta.x) > 25) && (delta.x > 0)) &&
+        !(((pitch + delta.x) < -60) && (delta.x < 0)) ) 
+    {
+        Core::getSingletonPtr()->logNormal("Updating Camera Goal:  "
+                                           "Pitch: " + StringConverter::toString(pitch) + 
+                                           ", Delta: " + StringConverter::toString(delta.x) + 
+                                           ", New Goal: " + StringConverter::toString((pitch + delta.x)));
+        ent->mCameraPivot->pitch(Degree(delta.x), Ogre::Node::TS_LOCAL);
+    }
+
+    Ogre::Vector3 goalPos = ent->mCameraGoal->_getDerivedPosition();
+    Ogre::Vector3 pivPos = ent->mCameraPivot->_getDerivedPosition();
+    Ogre::Real dist = goalPos.distance(pivPos);
+    Ogre::Real distChange = boost::any_cast<Ogre::Real>(delta.z) * dist;
+
+    //Bound zoom
+    if( !(dist + distChange < 8 && distChange < 0) &&
+        !(dist + distChange > 25 && distChange > 0) )
+    {
+        ent->mCameraGoal->translate(0, 0, distChange, Ogre::Node::TS_LOCAL);
+    }
+}
+
+
+void AnimateEntityBlueprint::setCameraZoom(AnimateEntity* ent,
+                                            boost::any& real)
+{
+    Ogre::Vector3 goalPos = ent->mCameraGoal->_getDerivedPosition();
+    Ogre::Vector3 pivPos = ent->mCameraPivot->_getDerivedPosition();
+    Ogre::Real dist = goalPos.distance(pivPos);
+    Ogre::Real distChange = boost::any_cast<Ogre::Real>(real) * dist;
+
+    //Bound zoom
+    if( !(dist + distChange < 8 && distChange < 0) &&
+        !(dist + distChange > 25 && distChange > 0) )
+    {
+        ent->mCameraGoal->translate(0, 0, distChange, Ogre::Node::TS_LOCAL);
+    }
 }
 
 void AnimateEntityBlueprint::setAnimationFadeSpeed(AnimateEntity* ent,

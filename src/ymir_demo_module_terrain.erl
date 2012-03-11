@@ -37,9 +37,6 @@ stop() ->
     ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 %%%%%% Action Definitions
-mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
-mouse_rotate(_Key, _Val, Offset) -> Offset.
-
 position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
 position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
 position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};

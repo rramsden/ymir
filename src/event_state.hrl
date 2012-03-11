@@ -150,11 +150,11 @@
 -define(KC_MAIL,  16#EC).
 -define(KC_MEDIASELECT,  16#ED).
 
--define(MB_Left, 16#00).    
--define(MB_Right, 16#01).
--define(MB_Middle, 16#02).
--define(MB_Button3, 16#03).  
--define(MB_Button4, 16#04).
--define(MB_Button5, 16#05).
--define(MB_Button6, 16#06).
--define(MB_Button7, 16#07).
+-define(MB_LEFT, 16#00).    
+-define(MB_RIGHT, 16#01).
+-define(MB_MIDDLE, 16#02).
+-define(MB_BUTTON3, 16#03).  
+-define(MB_BUTTON4, 16#04).
+-define(MB_BUTTON5, 16#05).
+-define(MB_BUTTON6, 16#06).
+-define(MB_BUTTON7, 16#07).

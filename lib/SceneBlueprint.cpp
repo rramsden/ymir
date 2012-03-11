@@ -366,6 +366,7 @@ namespace Ymir{
         Core* core = Core::getSingletonPtr();
         int isOn = boost::any_cast<bool>(val) ? 1 : 0;
 
+        scene->showBoundingBoxes(isOn);
         core->mDebugDrawer->setDebugMode(isOn);
     }
 

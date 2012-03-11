@@ -4,13 +4,18 @@
 
 -include("event_state.hrl").
 
+-define(RUN_SPEED, 17.0).
+-define(TURN_SPEED, 500.0).
+-define(FADE_SPEED, 7.8).
 -define(TOGGLE_DANCE, {keyReleased, ?KC_E}).
+
 
 -export([title/0, description/0, actions/0, start/0, stop/0]).
 
 title() -> "Character Controller".
 description() -> "Kinematic Character Controller Demo".
 actions() -> [{?TOGGLE_DANCE, fun(S) -> toggle_dance(true, S) end},
+              {{mouseReleased, ?MB_LEFT}, fun(S) -> position(S) end}, 
               {frameStarted, fun(S) -> move(S) end}].
 start() -> 
 
@@ -25,19 +30,24 @@ start() ->
     
     Camera = { "Camera", "camera", [{"position", {0.0, 10.0, 15.0}},
                                     {"lookAt", {0.0, 0.0, 0.0}},
-                                    {"nearClip", 5.0},
+                                    {"nearClip", 0.1},
+                                    {"farClip", 150.0},
                                     {"fixYaw", true}] },
 
     Sinbad = { "Sinbad", "animate_entity", [{"mesh", "Sinbad.mesh"},
-                                            {"animationFadeSpeed", 7.8},
+                                            {"moveSpeed", ?RUN_SPEED},
+                                            {"turnSpeed", ?TURN_SPEED},
+                                            {"animationFadeSpeed", ?FADE_SPEED},
                                             {"position", {0.00, 10.00, 0.00}},
+                                            {"camera", "Camera"},
                                             {"skeletalEntities", [{"Sheath.L", "Sword1", "Sword.mesh"},
                                                                   {"Sheath.R", "Sword2", "Sword.mesh"}
                                                                  ]},
                                             {"animations", ["IdleTop", "IdleBase"]}]},
                                                 
 
-    Scene = { title(), "scene", [{"ambient", {0.3, 0.3, 0.3, 1.0}},
+    Scene = { title(), "scene", [{"type", "exterior_small"},
+                                 {"ambient", {0.3, 0.3, 0.3, 1.0}},
                                  {"backgroundColour", {1.0, 1.0, 0.8, 1.0}},
                                  %%{"fog", {"linear", {1.0, 1.0, 0.8, 0.0}, 0.0, 15.0, 100.00}},
                                  {"debug", true},
@@ -52,8 +62,16 @@ stop() ->
                                    {title(), "scene", []}]}).
 
 %%%%%% Action Definitions
-mouse_rotate(?MB_Right, true, {Dx, Dy, Dz}) -> {Dx * 0.001, Dy * 0.0, Dz * 0.0};
-mouse_rotate(_Key, _Val, Offset) -> Offset.
+mouse_rotate(State) ->
+    case dict:fetch( moved, State#eventState.mouse ) of
+        true -> 
+            {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
+            Rot = {Ry * -0.05, Rx * -0.05, 0.0},
+            [{"cameraGoal", Rot}];
+
+        false -> 
+            []
+     end.
 
 position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0}; 
 position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0};
@@ -61,25 +79,53 @@ position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 1.0, DY, DZ};
 position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 1.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
 
-position(State) when is_record(State, eventState) ->
-    Default = {0.0, 0.0, 0.0},   
-    F = fun( Key, Val, In ) -> position_offset(Key, Val, In) end,
-    Offset = dict:fold(F, Default, State#eventState.keyboard),
-    if
-        Offset /= Default ->
-            [{"move", Offset}];  
+%position(State) when is_record(State, eventState) ->
+%    Default = {0.0, 0.0, 0.0},   
+%    F = fun( Key, Val, In ) -> position_offset(Key, Val, In) end,
+%    Offset = dict:fold(F, Default, State#eventState.keyboard),
+%    [{"move", Offset}].
+    %if
+    %    Offset /= Default ->
+    %        [{"move", Offset}];  
+%
+%        true ->
+ %           []
+%    end.
 
-        true ->
-            []
+move_to(State) when is_record(State, eventState) ->
+
+    {{Ax, _Rx}, {Ay, _Ry}, _Dz} = dict:fetch(current, State#eventState.mouse),
+    case ymir_demo:core_call({rayCast, [(Ax * 1.0), (Ay * 1.0)]}) of
+        {ok, Objects} -> io:format("Got: ~p~n", [Objects]), [];
+        Else -> io:format("Not right:  ~p~n", [Else]), []
     end.
+
+position(State) when is_record(State, eventState) ->
+   
+    case dict:find( ?MB_LEFT, State#eventState.mouse ) of
+        {ok, true} ->
+            move_to(State);
+        _else ->
+            []
+    end,
+
+    State.
 
 rotation(State) when is_record(State, eventState) ->
 
+    case dict:find( ?MB_MIDDLE, State#eventState.mouse ) of
+        {ok, true} ->
+            mouse_rotate(State);
+        _else ->
+            []
+    end.
+
+zoom(State) when is_record(State, eventState) ->
     case dict:fetch( moved, State#eventState.mouse ) of
         true -> 
-            {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
-            {Yaw, Pitch, _Roll} = {Rx * -0.001, Ry * -0.001, 0},
-            [ {Name, Val} || {Name, Val} <- [{"yaw", Yaw}, {"pitch", Pitch}], Val /= 0.0 ];
+            {{_Ax, _Rx}, {_Ay, _Ry}, {_Az, Rz}} = dict:fetch(current, State#eventState.mouse),
+            Rot = {0.0, 0.0, Rz * -0.0005},
+            [{"cameraGoal", Rot}];
 
         false -> 
             []
@@ -87,7 +133,7 @@ rotation(State) when is_record(State, eventState) ->
         
 move(State) when is_record(State, eventState) ->
     
-        case position(State) ++ rotation(State) of
+        case rotation(State) ++ zoom(State) of
 
             Updates when Updates /= []->
 
@@ -96,8 +142,8 @@ move(State) when is_record(State, eventState) ->
 
                 %%Tell OgreManager about the updated object
                 gen_server:call(ymir_demo, {core, { update,
-                                                    [{"Camera", 
-                                                      "camera",
+                                                    [{"Sinbad", 
+                                                      "animate_entity",
                                                       Updates
                                                      }]}} );
             _Else ->

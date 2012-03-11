@@ -194,7 +194,39 @@ namespace Ymir {
     
         rendering = false;
     }
+  
+    Ogre::RaySceneQuery* Core::createRayQuery(Ogre::Real x, Ogre::Real y){
+        
+        if( !viewport || !mScene || !window ){
+            //TODO: Exception
+        }
+
+        Ogre::Real nX = x / window->getWidth();
+        Ogre::Real nY = y / window->getHeight();
+        Ogre::Camera* cam = viewport->getCamera();
+
+        if( !cam ){
+            //TODO: Exception 
+        }
+
+        //Create the ray from viewport pov
+        Ogre::Ray ray = cam->getCameraToViewportRay(nX, nY);
+
+        //Cast the ray into the scene, gathering up all objects
+        //it intersects with (in sorted order)
+        Ogre::RaySceneQuery* query = mScene->createRayQuery(ray);
+
+        return query;
+    }
     
+    void Core::destroyQuery(Ogre::SceneQuery* query){
+        if( !mScene ){
+            //TODO: Exception
+        }
+
+        mScene->destroyQuery(query);
+    }
+
     int Core::ticktock(){
 
 
