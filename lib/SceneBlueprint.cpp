@@ -1,5 +1,10 @@
-#include "SceneBlueprint.h"
+#include <CCSCameraControlSystem.h>
 
+#include <CCSBasicCameraModes.h>
+#include <CCSFreeCameraMode.h>
+#include <CCSOrbitalCameraMode.h>
+
+#include "SceneBlueprint.h"
 #include "Core.h"
 #include "ObjectFactory.h"
 
@@ -90,7 +95,8 @@ namespace Ymir{
             PropList props;
             ObjectFactory::create(cameraID, Object::Camera, props);
         } 
-        
+      
+
         //Fetch the camera and create the viewport
         Camera* camera = core->mScene->getCamera(cameraID);
         core->viewport = core->window->addViewport(camera);

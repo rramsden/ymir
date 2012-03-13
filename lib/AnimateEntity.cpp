@@ -8,10 +8,12 @@ namespace Ymir {
         mID(id),
         mScene(NULL),
         mNode(NULL),
-        mObject(NULL),
+        mEntityNode(NULL),
         mCameraNode(NULL),
-        mCameraPivot(NULL),
-        mCameraGoal(NULL),
+        mObject(NULL),
+        mCameraYaw(0),
+        mCameraPitch(0),
+        mCameraZoom(0),
         mPosition(0,0,0),
         mGoalPosition(0,0,0),
         mMoveSpeed(0),
@@ -43,7 +45,9 @@ namespace Ymir {
     }
 
     void AnimateEntity::updateEntity(Ogre::Real dt){
-    
+   
+        /*mPosition = mNode->getPosition(); 
+
           //If we haven't reached our destination move 
         if( (mGoalPosition.x != mPosition.x) ||
             (mGoalPosition.z != mPosition.z) )
@@ -74,31 +78,37 @@ namespace Ymir {
                                            ", goal: " + StringConverter::toString(mGoalPosition) + 
                                            ", yawToGoal: " + StringConverter::toString(yawToGoal));
 
-            if( Math::RealEqual(yawToGoal, 0.0f, .001f) ){
+            if( Math::RealEqual(yawToGoal, 0.0f, .00001f) ){
+           
+               mNode->setPosition(mGoalPosition);
             mNode->translate(0,0, dt * mMoveSpeed, Ogre::Node::TS_LOCAL);
 
             //Update stored position
             mPosition = mNode->getPosition();  
 
-            //If we moved passed our mark, put ourselves at the dest
-            if( mPosition.positionEquals(mGoalPosition) ) 
-            {
-                mPosition = mGoalPosition;
-                mNode->setPosition(mGoalPosition);
+            Ogre::Real dist = Math::Abs((mGoalPosition - mPosition).length());
+            Ogre::Real move = dt * mMoveSpeed;
+
+            Core::getSingletonPtr()->logNormal("\tdist: " + StringConverter::toString(dist) + ", move: " + StringConverter::toString(move));
+
+            if( dist >= move ){
+                mNode->translate(0,0, dt * mMoveSpeed, Ogre::Node::TS_LOCAL);
+            } else {
+                mNode->translate(0,0, dist, Ogre::Node::TS_LOCAL);
             }
             }
-        }
+        }*/
     }
 
     void AnimateEntity::updateCamera(Ogre::Real dt){
 
-        //Place the camera 
+        /*//Place the camera 
         mCameraPivot->setPosition(mNode->getPosition() + Vector3::UNIT_Y * 2);
 
         Vector3 offset = mCameraGoal->_getDerivedPosition() - mCameraNode->getPosition();
         mCameraNode->translate(offset * dt * 9.0f);        
 
-        mCameraNode->lookAt(mCameraPivot->_getDerivedPosition(), Ogre::Node::TS_WORLD);
+        mCameraNode->lookAt(mCameraPivot->_getDerivedPosition(), Ogre::Node::TS_WORLD);*/
     }
 
     void AnimateEntity::updateAnimations(Ogre::Real dt){

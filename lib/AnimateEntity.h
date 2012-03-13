@@ -36,12 +36,15 @@ namespace Ymir {
             //Ogre data
             Ogre::SceneManager* mScene;
             Ogre::SceneNode* mNode;
-            Ogre::Entity* mObject;
-            
-            //Camera data
+            Ogre::SceneNode* mEntityNode;
             Ogre::SceneNode* mCameraNode;
-            Ogre::SceneNode* mCameraPivot; 
-            Ogre::SceneNode* mCameraGoal;
+            Ogre::SceneNode* mCameraPitchNode;
+            Ogre::Entity* mObject;
+           
+            //Camera settings
+            Ogre::Real mCameraYaw;           
+            Ogre::Real mCameraPitch;
+            Ogre::Real mCameraZoom;
 
             //Movement Options
             Ogre::Vector3 mPosition; 
