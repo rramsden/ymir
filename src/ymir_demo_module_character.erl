@@ -28,8 +28,14 @@ start() ->
                                           {"scale", {1.25, 0.10, 1.25}},
                                           {"material", "Examples/Rockwall"}]},
     
-    Camera = { "Camera", "camera", [{"position", {0.0, 10.0, 15.0}},
+    Camera = { "Camera", "camera", [{"type", "orbit"},
+                                    {"target", "Sinbad"},
+                                    {"position", {0.0, 10.0, 15.0}},
                                     {"lookAt", {0.0, 0.0, 0.0}},
+                                    {"moveSpeed", 20.0},
+                                    {"rotateSpeed", 50.0},
+                                    {"zoomSpeed", 0.00001},
+                                    
                                     {"nearClip", 0.1},
                                     {"farClip", 150.0},
                                     {"fixYaw", true}] },
@@ -39,7 +45,7 @@ start() ->
                                             {"turnSpeed", ?TURN_SPEED},
                                             {"animationFadeSpeed", ?FADE_SPEED},
                                             {"position", {0.00, 10.00, 0.00}},
-                                            {"camera", "Camera"},
+                                            %%{"camera", "Camera"},
                                             {"skeletalEntities", [{"Sheath.L", "Sword1", "Sword.mesh"},
                                                                   {"Sheath.R", "Sword2", "Sword.mesh"}
                                                                  ]},
@@ -53,7 +59,7 @@ start() ->
                                  {"debug", true},
                                  {"gravity", {0.0, -9.8, 0.0}},
                                  {"viewport", "Camera"},
-                                 {"objects", [Light, Ground, Camera, Sinbad]}] },
+                                 {"objects", [Light, Ground, Sinbad, Camera]}] },
 
     ymir_demo:core_call({create, [Scene]}).
 
@@ -66,15 +72,15 @@ mouse_rotate(State) ->
     case dict:fetch( moved, State#eventState.mouse ) of
         true -> 
             {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
-            Rot = {Ry * -0.05, Rx * -0.05, 0.0},
-            [{"cameraGoal", Rot}];
+            Rot = {Rx * 1.0, Ry * 1.0, 0.0},
+            [{"rotate", Rot}];
 
         false -> 
             []
      end.
 
-position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0}; 
-position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0};
+position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0}; 
+position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0};
 position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 1.0, DY, DZ};
 position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 1.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
@@ -140,8 +146,9 @@ zoom(State) when is_record(State, eventState) ->
             case Rz of
                 0 -> [];
                 _Else ->
-                    Rot = {0.0, 0.0, Rz * -0.0005},
-                    [{"cameraGoal", Rot}]
+                    io:format("Zoom zoom ~n"),
+                    Zoom = Rz * 1.0,
+                    [{"zoom", Zoom}]
             end;
 
         false -> 
@@ -159,8 +166,8 @@ move(State) when is_record(State, eventState) ->
 
                 %%Tell OgreManager about the updated object
                 gen_server:call(ymir_demo, {core, { update,
-                                                    [{"Sinbad", 
-                                                      "animate_entity",
+                                                    [{"Camera", 
+                                                      "camera",
                                                       Updates
                                                      }]}} );
             _Else ->

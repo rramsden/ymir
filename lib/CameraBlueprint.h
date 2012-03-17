@@ -1,40 +1,57 @@
 #ifndef _CAMERABLUEPRINT_H
 #define _CAMERABLUEPRINT_H
 
-#include <OgreCamera.h>
+#include <CCSCameraControlSystem.h>
 
-#include "NodeBlueprint.h"
+#include "ObjectBlueprint.h"
+
+//Mode blueprints
+#include "FreeCameraBlueprint.h"
+#include "FirstPersonCameraBlueprint.h"
+#include "RTSCameraBlueprint.h"
+#include "OrbitalCameraBlueprint.h"
 
 namespace Ymir {
 
-    class CameraBlueprint : public NodeBlueprint<Ogre::Camera> {
+    class CameraBlueprint : public OgreBlueprint {
 
         public:
             CameraBlueprint();
             ~CameraBlueprint(){}
-            
-            //Cameras overrides default SceneNode behavior
-            static void setCameraPosition(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraMove(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraDirection(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraLookAt(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraYaw(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraPitch(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setCameraRoll(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setNearClip(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setFarClip(NodeInfo<Ogre::Camera>*, boost::any&);
-            static void setFixYaw(NodeInfo<Ogre::Camera>*, boost::any&);
+           
+            void create(std::string&, PropList&);
+            void update(std::string&, PropList&);
+            void destroy(std::string&, PropList&);
+
+            static int decodeType(const char*, int*, boost::any*);
+       
+            static void setNearClip(CCS::CameraControlSystem*, boost::any&);
+            static void setFarClip(CCS::CameraControlSystem*, boost::any&);
+            static void setFixYaw(CCS::CameraControlSystem*, boost::any&);
+            static void setTarget(CCS::CameraControlSystem*, boost::any&);
+            static void setAutoTrack(CCS::CameraControlSystem*, boost::any&);
+            static void setPosition(CCS::CameraControlSystem*, boost::any&);
+            static void setLookAt(CCS::CameraControlSystem*, boost::any&);
 
         protected:
-            Ogre::Camera* createOgreObject( std::string&, 
-                                            PropList&, 
-                                            Ogre::SceneManager*);
+           typedef enum {
+                CCS_FREE = 0,
+                CCS_FIRSTPERSON,
+                CCS_RTS, 
+                CCS_ORBIT,
+                CCS_MAX
+            } CCSType;
 
-            Ogre::Camera* findOgreObject( std::string&, 
-                                          Ogre::SceneManager*);
+            FreeCameraBlueprint mFreeBp;
+            FirstPersonCameraBlueprint mFirstPersonBp;
+            RTSCameraBlueprint mRTSBp;
+            OrbitalCameraBlueprint mOrbitalBp;
 
-            void destroyOgreObject( std::string&, 
-                                    Ogre::SceneManager*);
+            typedef std::pair<CameraModeBlueprint*, CameraMode*> CameraState;
+            typedef std::map<std::string, CameraState> CameraStates;
+            CameraStates mCameraStates; 
+
+            CameraModeBlueprint* mBPS[CCS_MAX];
     };
 }
 #endif

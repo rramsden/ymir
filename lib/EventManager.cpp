@@ -390,6 +390,11 @@ namespace Ymir {
         mTasks.clear();
         mLock.unlock();
 
+        //Update CCS
+        if( core->mCCS ){
+            core->mCCS->update(e.timeSinceLastFrame);
+        }
+
         //Have ever animate entity update themselves
         std::map<std::string, Ymir::AnimateEntity*>::iterator itEnt;
         for(itEnt = mEntities.begin(); itEnt != mEntities.end(); itEnt++){

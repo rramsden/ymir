@@ -39,9 +39,9 @@ namespace Ymir {
         //Continue playing active animations
         updateAnimations(dt); 
 
-        if( mCameraNode ){
+        /*if( mCameraNode ){
             updateCamera(dt);
-        }
+        }*/
     }
 
     void AnimateEntity::updateEntity(Ogre::Real dt){

@@ -16,7 +16,10 @@ start() ->
     Light = { "Light", "light", [{"position", {20.0, 80.0, 0.0}},
                                  {"source", "point"} ]},
     Head = {"Head", "static_entity", [{"mesh", "ogrehead.mesh"}]},
-    Camera = { "Camera", "camera", [{"position", {0.0, 0.0, 80.0}},
+    Camera = { "Camera", "camera", [{"type", "free"},
+                                    {"position", {0.0, 0.0, 80.0}},
+                                    {"moveSpeed", 20.0},
+                                    {"rotateSpeed", 50.00},
                                     {"lookAt", {0.0, 0.0, -300.0}},
                                     {"nearClip", 5.0},
                                     {"fixYaw", true}] },
@@ -33,10 +36,10 @@ stop() ->
     ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 %%%%%% Action Definitions
-position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
-position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
-position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
-position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
+position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0}; 
+position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0};
+position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 1.0, DY, DZ};
+position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 1.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
 
 position(State) when is_record(State, eventState) ->
@@ -56,8 +59,14 @@ rotation(State) when is_record(State, eventState) ->
     case dict:fetch( moved, State#eventState.mouse ) of
         true -> 
             {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
-            {Yaw, Pitch, _Roll} = {Rx * -0.001, Ry * -0.001, 0},
-            [ {Name, Val} || {Name, Val} <- [{"yaw", Yaw}, {"pitch", Pitch}], Val /= 0.0 ];
+            Res = {Rx * 1.0, Ry * 1.0, 0},
+            case Res of
+                {0.0, 0.0, 0.0} -> 
+                    [];
+
+                {Yaw, Pitch, _Roll} ->
+                    [{"rotate", {Yaw, Pitch, 0.0}}]
+            end;     
 
         false -> 
             []

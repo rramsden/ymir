@@ -7,6 +7,9 @@
 #include <OgreTerrain.h>
 #include <OgreTerrainPaging.h>
 
+//CCS
+#include <CCSCameraControlSystem.h>
+
 //MyGUI
 #include <MyGUI.h>
 #include <MyGUI_OgrePlatform.h>
@@ -134,6 +137,8 @@ namespace Ymir {
             friend class SceneBlueprint;
 
             friend class TerrainBlueprint;
+        
+            friend class CameraBlueprint;
 
             template<class T>
             friend class NodeBlueprint;
@@ -165,6 +170,7 @@ namespace Ymir {
 
             //Active Scene
             Ogre::SceneManager* mScene;
+            CCS::CameraControlSystem* mCCS;
 
             //Terrain for active scene 
             Ogre::TerrainGlobalOptions* mTerrainGlobals;

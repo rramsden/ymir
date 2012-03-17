@@ -1,9 +1,5 @@
 #include <CCSCameraControlSystem.h>
 
-#include <CCSBasicCameraModes.h>
-#include <CCSFreeCameraMode.h>
-#include <CCSOrbitalCameraMode.h>
-
 #include "SceneBlueprint.h"
 #include "Core.h"
 #include "ObjectFactory.h"
@@ -20,9 +16,18 @@ namespace Ymir{
         mBlueprint["terrain"] = BPFP(&decodeTerrain,  NULL);
         mBlueprint["objects"] = BPFP(&SceneBlueprint::decodeObjects, NULL);
         mBlueprint["ambient"] = BPFP(&decodeColourVal, (setFP)&setAmbient);
-        mBlueprint["viewport"] = BPFP(&decodeString, NULL);
+
         mBlueprint["fog"] = BPFP(&decodeFog, (setFP)&setFog);
         mBlueprint["backgroundColour"] = BPFP(&decodeColourVal, NULL);
+
+        //CCS properties
+        mBlueprint["viewport"] = BPFP(&decodeString, (setFP)&setViewport);
+        /*mBlueprint["pov"] = BPFP(&decodeCCSType, (setFP)&setPov);
+        mBlueprint["povTarget"] = BPFP(&decodeString, (setFP)&setPovTarget);
+        mBlueprint["povDistance"] = BPFP(&decodeReal, (setFP)&setPovDistance);
+        mBlueprint["povPosition"] = BPFP(&decodeVector3, (setFP)&setPovPosition);
+        mBlueprint["povMove"] = BPFP(&decodeVector3, (setFP)&setPovMove);
+        mBlueprint["povRotate"] = BPFP(&decodeVector3, (setFP)&setPovRotate);*/
 
         //Physics properties
         mBlueprint["debug"] = BPFP(&decodeBool, (setFP)&setDebug);
@@ -72,14 +77,20 @@ namespace Ymir{
         Core* core = Core::getSingletonPtr();
         Ogre::ColourValue bColour = Ogre::ColourValue::Black;
         std::string cameraID = id + "_camera";
-        std::list<Object>::iterator it;
-        std::list<Object> objects;
+        std::string ccsID = id + "_ccs";
+        //std::list<Object>::iterator it;
+        //std::list<Object> objects;
 
-        props.hasProperty<std::string>("viewport", &cameraID);
-        props.hasProperty<std::list<Object> >("objects", &objects);
+        //props.hasProperty<std::string>("viewport", &cameraID);
+        //props.hasProperty<std::list<Object> >("objects", &objects);
+
+        Camera* camera = core->mScene->createCamera(cameraID);
+
+        //PropList props;
+        //ObjectFactory::create(cameraID, Object::Camera, props);
 
         //Look for the indicated camera
-        for( it = objects.begin(); it != objects.end(); it++ ){
+        /*for( it = objects.begin(); it != objects.end(); it++ ){
 
             if( it->id == cameraID && it->type == Object::Camera ){
                 ObjectFactory::create(it->id, it->type, it->props);
@@ -94,11 +105,17 @@ namespace Ymir{
         } else {  //Otherwise just create a default camera
             PropList props;
             ObjectFactory::create(cameraID, Object::Camera, props);
-        } 
+        }*/
       
+        //Initialise camera control system
+        core->mCCS = new CCS::CameraControlSystem(core->mScene, ccsID, camera);
+
+        /*core->mCCS->registerCameraMode("Free", new CCS::FreeCameraMode(core->mCCS));
+
+        core->mCCS->setCameraTarget(core->mScene->getRootSceneNode()->createChildSceneNode());
+        core->mCCS->setCurrentCameraMode(core->mCCS->getCameraMode("Free"));*/
 
         //Fetch the camera and create the viewport
-        Camera* camera = core->mScene->getCamera(cameraID);
         core->viewport = core->window->addViewport(camera);
 
         props.hasProperty<Ogre::ColourValue>("backgroundColour", &bColour);
@@ -132,10 +149,8 @@ namespace Ymir{
         //Setup the physics environment
         createPhysicsSim(props);
 
-        //Before creating objects, we first must look ahead
-        //for a defined viewport.  This is a requirement of the MyGUI
-        //subsystem. If no objects are defined or the viewport is not
-        //defined then one will be created automatically.
+        //Before creating objects, we first must define the viewport
+        //The camera for this viewport will be created automatically.  
         createViewport(id, props);
 
         //Before creating objects we also must initialise MyGUI
@@ -194,6 +209,12 @@ namespace Ymir{
             core->platform->shutdown();
             delete core->platform;
             core->platform = NULL;
+        }
+
+        if( core->mCCS ){
+            core->mCCS->deleteAllCameraModes();
+            delete core->mCCS;
+            core->mCCS = NULL;
         }
 
         //Destroy scene itself
@@ -265,6 +286,8 @@ namespace Ymir{
 
         return 0;
     }
+
+
 
     int SceneBlueprint::decodeTerrain( const char* data,
                                        int* idx, 
@@ -381,5 +404,26 @@ namespace Ymir{
         Vector3 vec = boost::any_cast<Vector3>(val);
 
         core->mDynamicsWorld->setGravity(BtOgre::Convert::toBullet(vec));
+    }
+
+    void SceneBlueprint::setViewport( Ogre::SceneManager* scene, 
+            boost::any& val )
+    {
+        std::string modeID = boost::any_cast<std::string>(val);
+        Core* core = Core::getSingletonPtr();
+        CCS::CameraControlSystem* ccs = core->mCCS;
+        CCS::CameraControlSystem::CameraMode* mode = NULL;
+
+        //Look up the designated camera (aka mode) id
+        if( !(mode = ccs->getCameraMode(modeID)) ){
+            core->logCritical("Camera " + modeID + " is not defined!");
+            //TODO exception
+            return;
+        }
+
+        //If the camera (mode) is not current, make it so. 
+        if( mode != ccs->getCurrentCameraMode() ){
+            ccs->setCurrentCameraMode(mode);
+        }
     }
 }

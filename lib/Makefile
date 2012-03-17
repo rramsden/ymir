@@ -49,7 +49,7 @@ AnimateEntityBlueprint.o: AnimateEntityBlueprint.cpp AnimateEntityBlueprint.h Og
 LightBlueprint.o: LightBlueprint.cpp LightBlueprint.h OgreBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
-CameraBlueprint.o: CameraBlueprint.cpp CameraBlueprint.h NodeBlueprint.h
+CameraBlueprint.o: CameraBlueprint.cpp CameraBlueprint.h FreeCameraBlueprint.h FirstPersonCameraBlueprint.h RTSCameraBlueprint.h OrbitalCameraBlueprint.h
 	$(CPP) -c -o $@ $(CFLAGS) $<
 
 TerrainBlueprint.o: TerrainBlueprint.cpp TerrainBlueprint.h

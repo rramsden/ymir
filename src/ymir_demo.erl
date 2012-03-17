@@ -60,9 +60,9 @@ draw_main_menu(Demos) when is_list(Demos) ->
     Actions = lists:map(fun({_M, _B, A}) -> A end, Demos),
 
     io:format("Creating scene with Buttons: ~p!~n", [Buttons]),
-    Camera = {"Camera", "camera", []},
-    ok = core_call({create, [{"Main Menu", "scene", [{"viewport", "Camera"},
-                                                      {"objects", [Camera] ++ Buttons}]}]}),
+    
+    ok = core_call({create, [{"Main Menu", "scene", [
+            {"objects", Buttons}]}]}),
 
     Actions ++ [{{keyDown, ?KC_ESCAPE}, fun(S) -> stop(S) end}].
 

@@ -22,10 +22,13 @@ start() ->
                 {"minY", 0}, {"maxY", 0},
                 {"minX", 0}, {"maxX", 0} ],
 
-    Camera = {"Camera", "camera", [{"position", {1683.0, 50.0, 2116.0}},
-                                   {"lookAt", {1963.0, 50.0, 1660.0}},
+    Camera = {"Camera", "camera", [{"type", "free"},
+                                   {"position", {1683.0, 50.0, 2116.0}},
+                                   {"moveSpeed", 20.0},
+                                   {"rotateSpeed", 50.0},
+                                   %%{"lookAt", {1963.0, 50.0, 1660.0}},
                                    {"nearClip", 0.01},
-                                   {"farClip", 50000.0}]},
+                                   {"farClip", 500.0}]},
 
     Scene = { title(), "scene", [ {"viewport", "Camera"},
                                   {"terrain", Terrain},
@@ -37,10 +40,10 @@ stop() ->
     ymir_demo:core_call({destroy, [{title(), "scene", []}]}).
 
 %%%%%% Action Definitions
-position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ - 10.0}; 
-position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ + 10.0};
-position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 10.0, DY, DZ};
-position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 10.0, DY, DZ};
+position_offset(?KC_W, true, {DX,DY,DZ}) -> {DX, DY, DZ + 1.0}; 
+position_offset(?KC_S, true, {DX,DY,DZ}) -> {DX, DY, DZ - 1.0};
+position_offset(?KC_A, true, {DX,DY,DZ}) -> {DX - 1.0, DY, DZ};
+position_offset(?KC_D, true, {DX,DY,DZ}) -> {DX + 1.0, DY, DZ};
 position_offset(_Key, _Val, Offset) -> Offset.
 
 position(State) when is_record(State, eventState) ->
@@ -60,8 +63,7 @@ rotation(State) when is_record(State, eventState) ->
     case dict:fetch( moved, State#eventState.mouse ) of
         true -> 
             {{_Ax, Rx}, {_Ay, Ry}, {_Az, _Rz}} = dict:fetch(current, State#eventState.mouse),
-            {Yaw, Pitch, _Roll} = {Rx * -0.001, Ry * -0.001, 0},
-            [ {Name, Val} || {Name, Val} <- [{"yaw", Yaw}, {"pitch", Pitch}], Val /= 0.0 ];
+            [{"rotate", {Rx * 1.0, Ry * 1.0, 0.0}}];
 
         false -> 
             []

@@ -26,6 +26,7 @@ namespace Ymir {
         viewport(NULL),
 
         mScene(NULL),
+        mCCS(NULL),
 
         mTerrainGlobals(NULL),
         mTerrainGroup(NULL),
@@ -235,6 +236,8 @@ namespace Ymir {
         }
 
         Ogre::WindowEventUtilities::messagePump();  
+        
+        logNormal("Rendering one!");
         root->renderOneFrame();
 
         return 0;
