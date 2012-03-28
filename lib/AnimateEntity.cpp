@@ -9,15 +9,11 @@ namespace Ymir {
         mScene(NULL),
         mNode(NULL),
         mEntityNode(NULL),
-        mCameraNode(NULL),
         mObject(NULL),
-        mCameraYaw(0),
-        mCameraPitch(0),
-        mCameraZoom(0),
-        mPosition(0,0,0),
-        mGoalPosition(0,0,0),
-        mMoveSpeed(0),
-        mTurnSpeed(0),
+        mVelocity(0),
+        mVelocityMax(0),
+        mAcceleration(0),
+        mAccelerationFactor(0),
         mAnimationCount(0),
         mAnimationFadeSpeed(0),
         mAnimations(),
@@ -38,14 +34,26 @@ namespace Ymir {
 
         //Continue playing active animations
         updateAnimations(dt); 
-
-        /*if( mCameraNode ){
-            updateCamera(dt);
-        }*/
     }
 
     void AnimateEntity::updateEntity(Ogre::Real dt){
-   
+
+        if( mAccelerationFactor){  //AccelerationFactor != 0 means we are accelerating
+            Real newVelocity = mVelocity + (mAccelerationFactor *  mAcceleration * dt);
+            Real sign = newVelocity / Math::Abs(newVelocity);
+
+
+
+            mVelocity = sign * std::min<Real>( mVelocityMax, Math::Abs(newVelocity) );
+
+        } else {
+            mVelocity = std::max<Real>(0, mVelocity - (mAcceleration * dt));
+        }
+
+        //Move back/forth relative to current velocity
+        Vector3 orienVec = mNode->getOrientation().zAxis().normalisedCopy();
+        mNode->translate( orienVec * (mVelocity * dt) );
+
         /*mPosition = mNode->getPosition(); 
 
           //If we haven't reached our destination move 
@@ -100,17 +108,6 @@ namespace Ymir {
         }*/
     }
 
-    void AnimateEntity::updateCamera(Ogre::Real dt){
-
-        /*//Place the camera 
-        mCameraPivot->setPosition(mNode->getPosition() + Vector3::UNIT_Y * 2);
-
-        Vector3 offset = mCameraGoal->_getDerivedPosition() - mCameraNode->getPosition();
-        mCameraNode->translate(offset * dt * 9.0f);        
-
-        mCameraNode->lookAt(mCameraPivot->_getDerivedPosition(), Ogre::Node::TS_WORLD);*/
-    }
-
     void AnimateEntity::updateAnimations(Ogre::Real dt){
 
         //Walk the list of animations and add time to all enabled.
@@ -161,6 +158,8 @@ namespace Ymir {
 
                 if( weight <= 0 ){
                     anim->setEnabled(false);
+                    anim->setTimePosition(0);
+                    anim->setWeight(0);
                     mAnimationFadeOut[id] = false;
                 }
             }

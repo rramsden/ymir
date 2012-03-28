@@ -8,14 +8,15 @@ AnimateEntityBlueprint::AnimateEntityBlueprint() : OgreBlueprint(){
 
     mBlueprint["mesh"] = BPFP(&decodeString, NULL);
     mBlueprint["position"] = BPFP(&decodeVector3, (setFP)&setPosition);
-    mBlueprint["move"] = BPFP(&decodeVector3, (setFP)&setMove);
+    mBlueprint["move"] = BPFP(&decodeReal, (setFP)&setMove);
     mBlueprint["moveTo"] = BPFP(&decodeVector3, (setFP)&setMoveTo);
-    mBlueprint["camera"] = BPFP(&decodeString, (setFP)&setCamera);
-    mBlueprint["cameraGoal"] = BPFP(&decodeVector3, (setFP)&setCameraGoal);
-    mBlueprint["cameraDistance"] = BPFP(&decodeReal, (setFP)&setCameraZoom);
+    mBlueprint["rotate"] = BPFP(&decodeVector3, (setFP)&setRotate);
 
-    mBlueprint["moveSpeed"] = BPFP(&decodeReal, (setFP)&setMoveSpeed);
-    mBlueprint["turnSpeed"] = BPFP(&decodeReal, (setFP)&setTurnSpeed);
+    mBlueprint["velocity"] = BPFP(&decodeReal, (setFP)&setVelocity);
+    mBlueprint["velocityMax"] = BPFP(&decodeReal, (setFP)&setVelocityMax);
+    
+    mBlueprint["acceleration"] = BPFP(&decodeReal, (setFP)&setAcceleration);
+    mBlueprint["accelerationFactor"] = BPFP(&decodeReal, (setFP)&setAccelerationFactor);
 
     mBlueprint["animationFadeSpeed"] = 
         BPFP(&decodeFloat, (setFP)&setAnimationFadeSpeed);
@@ -58,10 +59,6 @@ void AnimateEntityBlueprint::create(std::string& id, PropList& props ){
     ent->mObject = obj;
     ent->mEntityNode->attachObject(obj);
     
-    ent->mCameraNode = ent->mNode->createChildSceneNode(id + "_camera_node");
-    ent->mCameraPitchNode = ent->mCameraNode->createChildSceneNode(id + "_camera_ptich_node");
-    ent->mCameraZoom = 10.0f;
-    ent->mCameraNode->setPosition(0.0f, 0.0f, 10.0f);
     ent->mScene = scene;
    
     //Init all defined animation states
@@ -222,38 +219,58 @@ void AnimateEntityBlueprint::setPosition(AnimateEntity* ent,
     Vector3 vPos = boost::any_cast<Vector3>(pos);
 
     ent->mNode->setPosition(vPos);
-
-    ent->mPosition = vPos;
-    ent->mGoalPosition = vPos;
 }
 
 void AnimateEntityBlueprint::setMove(AnimateEntity* ent,
-                                     boost::any& goal)
+                                     boost::any& val)
 {
-    ent->mGoalPosition += boost::any_cast<Ogre::Vector3>(goal);
+    Ogre::Real acceleration = boost::any_cast<Ogre::Real>(val);
+
+    //Set the current acceleration    
+    ent->mAcceleration = acceleration;
 }
 
 void AnimateEntityBlueprint::setMoveTo(AnimateEntity* ent,
                                        boost::any& pos)
 {
-    Ogre::Vector3 temp = boost::any_cast<Ogre::Vector3>(pos);
-
-    ent->mGoalPosition = Vector3(temp.x, ent->mGoalPosition.y, temp.z);
+    //TODO
 }
 
-void AnimateEntityBlueprint::setMoveSpeed(AnimateEntity* ent,
-                                          boost::any& sp)
+void AnimateEntityBlueprint::setRotate(AnimateEntity* ent,
+                                       boost::any& val)
 {
-    ent->mMoveSpeed = boost::any_cast<Ogre::Real>(sp);
+    Ogre::Vector3 diff = boost::any_cast<Ogre::Vector3>(val);
+
+    ent->mNode->pitch(Degree(diff.x));
+    ent->mNode->yaw(Degree(diff.y));
+    ent->mNode->roll(Degree(diff.z));
 }
 
-void AnimateEntityBlueprint::setTurnSpeed(AnimateEntity* ent,
-                                          boost::any& ts)
+void AnimateEntityBlueprint::setVelocity(AnimateEntity* ent,
+                                         boost::any& val)
 {
-    ent->mTurnSpeed = boost::any_cast<Ogre::Real>(ts);
+    ent->mVelocity = boost::any_cast<Ogre::Real>(val);
 }
 
-void AnimateEntityBlueprint::setCamera(AnimateEntity* ent, 
+void AnimateEntityBlueprint::setVelocityMax(AnimateEntity* ent,
+                                            boost::any& val)
+{
+    ent->mVelocityMax = boost::any_cast<Ogre::Real>(val);
+}
+
+void AnimateEntityBlueprint::setAcceleration(AnimateEntity* ent,
+                                             boost::any& val)
+{
+    ent->mAcceleration = boost::any_cast<Ogre::Real>(val);
+}
+
+void AnimateEntityBlueprint::setAccelerationFactor(AnimateEntity* ent,
+                                                   boost::any& val)
+{
+    ent->mAccelerationFactor = boost::any_cast<Ogre::Real>(val);
+}
+
+/*void AnimateEntityBlueprint::setCamera(AnimateEntity* ent, 
                                        boost::any& id)
 {
     std::string camID = boost::any_cast<std::string>(id);
@@ -278,12 +295,12 @@ void AnimateEntityBlueprint::setCamera(AnimateEntity* ent,
     //Camera node will track the pivot as it orbits the character
     //ent->mCameraNode->setFixedYawAxis(true);
     //ent->mCameraNode->setAutoTracking(true, ent->mCameraPivot);
-}
+}*/
 
-void AnimateEntityBlueprint::setCameraGoal(AnimateEntity* ent,
+/*void AnimateEntityBlueprint::setCameraGoal(AnimateEntity* ent,
                                            boost::any& vec)
 {
-    /*Ogre::Vector3 delta = boost::any_cast<Ogre::Vector3>(vec);
+    Ogre::Vector3 delta = boost::any_cast<Ogre::Vector3>(vec);
     Ogre::Real dYaw = 0.0f, dPitch = 0.0f, dZoom = 0.0f;
     Ogre::Vector3 camPos = ent->mCameraNode->_getDerivedPosition();
     Ogre::Quaternion camOrien = ent->mCameraNode->_getDerivedOrientation();
@@ -341,16 +358,16 @@ void AnimateEntityBlueprint::setCameraGoal(AnimateEntity* ent,
         
         Vector3 temp2 = Quaternion(Degree(delta.x), Vector3::UNIT_X) * diffPos;
         ent->mCameraNode->setPosition(temp2 + rotCenter);
-    }*/
+    }
 
 
-}
+}*/
 
 
-void AnimateEntityBlueprint::setCameraZoom(AnimateEntity* ent,
+/*void AnimateEntityBlueprint::setCameraZoom(AnimateEntity* ent,
                                             boost::any& real)
 {
-    /*Ogre::Vector3 goalPos = ent->mCameraGoal->_getDerivedPosition();
+    Ogre::Vector3 goalPos = ent->mCameraGoal->_getDerivedPosition();
     Ogre::Vector3 pivPos = ent->mCameraPivot->_getDerivedPosition();
     Ogre::Real dist = goalPos.distance(pivPos);
     Ogre::Real distChange = boost::any_cast<Ogre::Real>(real) * dist;
@@ -360,8 +377,8 @@ void AnimateEntityBlueprint::setCameraZoom(AnimateEntity* ent,
         !(dist + distChange > 25 && distChange > 0) )
     {
         ent->mCameraGoal->translate(0, 0, distChange, Ogre::Node::TS_LOCAL);
-    }*/
-}
+    }
+}*/
 
 void AnimateEntityBlueprint::setAnimationFadeSpeed(AnimateEntity* ent,
                                                    boost::any& speed)
@@ -401,8 +418,15 @@ void AnimateEntityBlueprint::setAnimations(AnimateEntity* ent,
         Core::getSingletonPtr()->logNormal("Starting: " + id);
         ent->mAnimationFadeIn[id] = true;
         anim->setEnabled(true);
-        anim->setWeight(0);
-        anim->setTimePosition(0);
+        
+        //If the animation is fading in,
+        //or not fully faded out, fade in from
+        //original value
+        //if( !anim->getWeight() ){  
+        //    anim->setWeight(0);
+        //}
+
+        //anim->setTimePosition(0);
     }
 }
 

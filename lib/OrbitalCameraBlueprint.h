@@ -35,7 +35,7 @@ namespace Ymir {
             static void setZoom(CCS::OrbitalCameraMode* mode, boost::any& val){
                 Ogre::Real zoom = boost::any_cast<Ogre::Real>(val);
 
-                mode->setZoom(zoom);
+                mode->zoom(zoom);
             }
 
             static void setZoomSpeed(CCS::OrbitalCameraMode* mode, boost::any& val){

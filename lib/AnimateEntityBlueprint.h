@@ -44,8 +44,11 @@ namespace Ymir {
 
             static void setMove(AnimateEntity*, boost::any&);
             static void setMoveTo(AnimateEntity*, boost::any&);
-            static void setMoveSpeed(AnimateEntity*, boost::any&);
-            static void setTurnSpeed(AnimateEntity*, boost::any&);
+            static void setRotate(AnimateEntity*, boost::any&);
+            static void setVelocity(AnimateEntity*, boost::any&);
+            static void setVelocityMax(AnimateEntity*, boost::any&);
+            static void setAcceleration(AnimateEntity*, boost::any&);
+            static void setAccelerationFactor(AnimateEntity*, boost::any&);
 
             static void setSkeletalEntities(AnimateEntity*, boost::any&);
             static void setAnimationFadeSpeed(AnimateEntity*, boost::any&);

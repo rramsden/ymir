@@ -29,28 +29,19 @@ namespace Ymir {
             void updateAnimations(Ogre::Real dt);
             void fadeAnimations(Ogre::Real dt);
 
-            void updateCamera(Ogre::Real dt);
-
             std::string mID;
             
             //Ogre data
             Ogre::SceneManager* mScene;
             Ogre::SceneNode* mNode;
             Ogre::SceneNode* mEntityNode;
-            Ogre::SceneNode* mCameraNode;
-            Ogre::SceneNode* mCameraPitchNode;
             Ogre::Entity* mObject;
            
-            //Camera settings
-            Ogre::Real mCameraYaw;           
-            Ogre::Real mCameraPitch;
-            Ogre::Real mCameraZoom;
-
             //Movement Options
-            Ogre::Vector3 mPosition; 
-            Ogre::Vector3 mGoalPosition;
-            Ogre::Real mMoveSpeed;
-            Ogre::Real mTurnSpeed;
+            Ogre::Real mVelocity;
+            Ogre::Real mVelocityMax;
+            Ogre::Real mAcceleration;
+            Ogre::Real mAccelerationFactor;
 
             //Animation relevant data
             int mAnimationCount;
