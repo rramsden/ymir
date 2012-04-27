@@ -1,0 +1,19 @@
+Required packages on ubuntu 12.04
+--------------------------------
+
+Ogre Deps:
+sudo apt-get install build-essential cmake-gui libfreeimage-dev libfreetype7-dev libxraw7-dev libxrandr-dev libboost1.48-dev libboost-thread-dev libzip-dev libzzip-dev libxinerama-dev doxygen
+
+OIS: NONE
+
+MyGUI: uuid-dev 
+
+bullet: NONE
+    (Optional intel-cl nvidia-cl)
+
+libao: TBD
+
+Erlang:
+sudo apt-get install erlang erlang-base-hipe
+
+
